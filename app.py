@@ -75,7 +75,7 @@ if authentification_status :
             from Data_support import graph_charge_affid_stellair, calcul_taux_reponse, calcul_productivite_appels
             import plotly.graph_objects as go
             from data_process_aircall import def_df_support
-            from data_process_aircall import data_affid, line_support, agents_support
+            from data_process_aircall import data_affid, line_support, agents_support, line_armatis, agents_armatis
 
             def support():
                 st.title(" :bar_chart: Dashboard support affid")
