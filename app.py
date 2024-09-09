@@ -92,7 +92,7 @@ if authentification_status :
                     df2 = def_df_support(data_affid, data_affid, line_support, agents_support)
                 else:
                     df_support = def_df_support(data_affid, data_affid, line_armatis, agents_armatis)
-                    df2_armatis = def_df_support(data_affid, data_affid, line_armatis, agents_armati
+                    df2_armatis = def_df_support(data_affid, data_affid, line_armatis, agents_armatis)
 
                 #df_support = read_df_aircall()
                 #df_support = def_df_support(data_affid, data_affid, line_support, agents_support)
