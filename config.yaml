@@ -1,13 +1,14 @@
-credentials:
-  usernames:
-    johndoe:
-      name: Christophe Brichet
-      password: abc  # Hashed password for 'password1'
-    janesmith:
-      name: Miguel Pecqueux
-      password: def  # Hashed password for 'password2'
-cookie:
-  expiry_days: 1
-  key: support
-  name: app-support
-preauthorized: []
+# config.py
+
+credentials = {
+    "usernames": {
+        "cbri": {
+            "name": "Christophe Brichet",
+            "password": ""  # Placeholder, to be updated with the hashed password
+        },
+        "mpec": {
+            "name": "Miguel Pecqueux",
+            "password": ""  # Placeholder, to be updated with the hashed password
+        }
+    }
+}
