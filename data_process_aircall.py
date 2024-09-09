@@ -136,7 +136,7 @@ agents_armatis = ['Armatis Agent 1',
 
 
 line_support = 'Technique'
-line_armatis = 'Armatis'
+line_armatis = 'Armatis Technique'
 
 def def_df_support (df_entrant, df_sortant, line, liste_agents) :
     
