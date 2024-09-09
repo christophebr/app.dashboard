@@ -6,7 +6,7 @@ import streamlit_authenticator as stauth
 
 names = ['Christophe Brichet', 'Miguel Pecqueux']
 usernames = ['cbri', 'mpec']
-passwords = []
+passwords = ['cbri, 'mpec']
 
 # Générer les mots de passe hachés et les stocker dans un dictionnaire
 hashed_passwords = {username: bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode() for username, password in zip(usernames, passwords)}
