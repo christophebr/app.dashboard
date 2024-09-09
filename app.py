@@ -81,9 +81,22 @@ if authentification_status :
                 st.title(" :bar_chart: Dashboard support affid")
                 #st.write("Contenu de la page Autre Page")
 
+                # Sélection du dataframe
+                dataframe_option = st.sidebar.selectbox(
+                    "Choisir le dataframe",
+                    ["df_support", "df_support_armatis"]
+                )
+
+                if dataframe_option == "df_support":
+                    df_support = def_df_support(data_affid, data_affid, line_support, agents_support)
+                    df2 = def_df_support(data_affid, data_affid, line_support, agents_support)
+                else:
+                    df_support = def_df_support(data_affid, data_affid, line_armatis, agents_armatis)
+                    df2_armatis = def_df_support(data_affid, data_affid, line_armatis, agents_armati
+
                 #df_support = read_df_aircall()
-                df_support = def_df_support(data_affid, data_affid, line_support, agents_support)
-                df2 = def_df_support(data_affid, data_affid, line_support, agents_support)
+                #df_support = def_df_support(data_affid, data_affid, line_support, agents_support)
+                #df2 = def_df_support(data_affid, data_affid, line_support, agents_support)
                 #df2 = read_df_aircall()
 
                 #df_tickets = read_df_jira_support()
