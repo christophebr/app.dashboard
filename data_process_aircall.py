@@ -29,7 +29,7 @@ for file in files_aircall:
     current_data_aircall = pd.read_excel(path_source_affid_aircall +"/"+ file)
     data_affid_aircall = pd.concat([data_affid_aircall, current_data_aircall])
 
-data_affid_aircall = data_affid_aircall.loc[data_affid_aircall["line"].isin(["Standard - √† porter (sortants)", "Standard - Ã  porter (sortants)", "Standard", "Technique", "Commerce", "ADV", "Armatis"])]
+data_affid_aircall = data_affid_aircall.loc[data_affid_aircall["line"].isin(["Standard - √† porter (sortants)", "Standard - Ã  porter (sortants)", "Standard", "Technique", "Commerce", "ADV", "Armatis", "Armatis Technique"])]
 data_affid_aircall['HangupTime'] = pd.to_datetime(data_affid_aircall['time (TZ offset incl.)'], format='%H:%M:%S') + pd.to_timedelta(data_affid_aircall['duration (in call)'], unit='s')
 data_affid_aircall['datetime (UTC)'] = data_affid_aircall.apply(lambda row: row['datetime (UTC)'].replace(hour=row['time (TZ offset incl.)'].hour, minute=row['time (TZ offset incl.)'].minute, second=row['time (TZ offset incl.)'].second), axis=1)
 data_affid_aircall['time (TZ offset incl.)'] = pd.to_datetime(data_affid_aircall['time (TZ offset incl.)'], format='%H:%M:%S')
