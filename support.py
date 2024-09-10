@@ -38,9 +38,9 @@ def parameters_support ():
     end_date = st.date_input("Select an end date", max_date, min_value=min_date, max_value=max_date)
 
 
-    values = st.slider(
-    'Select a range of values',
-    1, 52, (50))
+    #values = st.slider(
+    #'Select a range of values',
+    #1, 52, (50))
 
     metric = 52
 
