@@ -33,7 +33,7 @@ config.credentials['usernames']['cbri']['password'] = hashed_passwords['cbri']
 config.credentials['usernames']['mpec']['password'] = hashed_passwords['mpec']
 
 # Initialiser l'authentificateur avec le dictionnaire des credentials
-authenticator = stauth.Authenticate(config.credentials, 'dashboard_support', 'support', cookie_expiry_days=0)
+authenticator = stauth.Authenticate(config.credentials, 'dashboard_support', 'support', cookie_expiry_days=2)
 
 name, authentification_status, username = authenticator.login()
 
@@ -70,7 +70,7 @@ if authentification_status :
             from support import parameters_support
             from support import df_selection_support
             from support import metrics_support
-            from support import tickets_support
+            from support import tickets_support , convert_to_sixtieth
             from Data_support import graph_activite , graph_taux_jour , graph_taux_heure
             from Data_support import graph_charge_affid_stellair, calcul_taux_reponse, calcul_productivite_appels
             import plotly.graph_objects as go
@@ -94,9 +94,13 @@ if authentification_status :
                     df_support = def_df_support(data_affid, data_affid, line_armatis, agents_armatis)
                     df2_armatis = def_df_support(data_affid, data_affid, line_armatis, agents_armatis)
 
+
                 #df_support = read_df_aircall()
                 #df_support = def_df_support(data_affid, data_affid, line_support, agents_support)
                 #df2 = def_df_support(data_affid, data_affid, line_support, agents_support)
+
+                #df_support_armatis = def_df_support(data_affid, data_affid, line_armatis, agents_armatis)
+                #df2_armatis = def_df_support(data_affid, data_affid, line_armatis, agents_armatis)
                 #df2 = read_df_aircall()
 
                 #df_tickets = read_df_jira_support()
@@ -118,11 +122,12 @@ if authentification_status :
                 col1, col2, col3= st.columns(3)
                 col1.metric("Taux de service en %", Taux_de_service, tendance_taux)
                 col2.metric("Appels entrant / Jour",Entrant, tendance_entrant)
-                col3.metric("Numéros unique", Numero_unique, tendance_unique)
+                col3.metric("Numéros unique entrant / Jour", Numero_unique, tendance_unique)
                 col_1, col_2, col_3 = st.columns(3)
-                col_1.metric("Temps Moy / Appel", round((temps_moy_appel / 60),2), tendance_appel)
+                #col_1.metric("Temps Moy / Appel", round((temps_moy_appel / 60),2), tendance_appel)
+                col_1.metric("Temps Moy / Appel", convert_to_sixtieth(temps_moy_appel))
                 col_2.metric("Nombre appels jour / agent", Nombre_appel_jour_agent)
-                col_3.metric('Taux clients répondus', round(taux_reponse * 100))  
+                col_3.metric('Taux clients répondus en %', round(taux_reponse * 100))  
 
                 st.plotly_chart(graph_activite(df_support), use_container_width=True)
                 #st.plotly_chart(tickets_support(df_tickets), use_container_width=True)
@@ -140,13 +145,13 @@ if authentification_status :
         elif selection_page == "Agents":
             from support import read_df_aircall
             from support import parameters_support
-            from support import df_selection_support
+            from support import df_selection_support, convert_to_sixtieth
             from Data_support import calcul_productivite_appels
             from support import read_df_jira_support
             from Data_support import charge_agents
-            from Data_support import graph_charge_agent
+            from Data_support import graph_charge_agent, charge_entrant_sortant
             from data_process_aircall import def_df_support
-            from data_process_aircall import data_affid, line_support, agents_support
+            from data_process_aircall import data_affid, line_support, agents_support, line_armatis, agents_armatis
             import pandas as pd
 
 
@@ -155,6 +160,17 @@ if authentification_status :
 
                 st.title(" :bar_chart: Dashboard support affid")
                 #st.write("Contenu de la page Autre Page")
+
+                                # Sélection du dataframe
+                dataframe_option = st.sidebar.selectbox(
+                    "Choisir le dataframe",
+                    ["df_support", "df_support_armatis"]
+                )
+
+                if dataframe_option == "df_support":
+                    df_support = def_df_support(data_affid, data_affid, line_support, agents_support)
+                else:
+                    df_support = def_df_support(data_affid, data_affid, line_armatis, agents_armatis)
 
                 #df_support = read_df_aircall()
                 df_support = def_df_support(data_affid, data_affid, line_support, agents_support)
@@ -183,27 +199,52 @@ if authentification_status :
                 com_jour_pierre, temps_moy_com_pierre, nb_appels_jour_pierre = calcul_productivite_appels(df_support, 'Pierre GOUPILLON')
                 com_jour_archimede, temps_moy_com_archimede, nb_appels_jour_archimede = calcul_productivite_appels(df_support, 'Archimede KESSI')
 
-                colm1, colm2, colm3= st.columns(3)
-                colm1.metric('Mourad - Com Moy / Jour', com_jour_mourad)
-                colm2.metric('Mourad - Temps Moy / Appel', round(temps_moy_com_mourad, 2))
-                colm3.metric('Mourad - Nb Appels / Jour', round(nb_appels_jour_mourad, 2))
+                com_jour_mourad, temps_moy_com_mourad, nb_appels_jour_mourad = calcul_productivite_appels(df_support, 'Mourad HUMBLOT')
+                com_jour_olivier, temps_moy_com_olivier, nb_appels_jour_olivier = calcul_productivite_appels(df_support, 'Olivier Sainte-Rose')
+                com_jour_pierre, temps_moy_com_pierre, nb_appels_jour_pierre = calcul_productivite_appels(df_support, 'Pierre GOUPILLON')
+                com_jour_archimede, temps_moy_com_archimede, nb_appels_jour_archimede = calcul_productivite_appels(df_support, 'Archimede KESSI')
 
-                colo1, colo2, colo3= st.columns(3)
-                colo1.metric('Olivier - Com Moy / Jour', com_jour_olivier)
-                colo2.metric('Olivier - Temps Moy / Appel', round(temps_moy_com_olivier, 2))
-                colo3.metric('Olivier - Nb Appels / Jour', round(nb_appels_jour_olivier, 2))
+                if dataframe_option == "df_support":
 
-                colp1, colp2, colp3= st.columns(3)
-                colp1.metric('Pierre - Com Moy / Jour', com_jour_pierre)
-                colp2.metric('Pierre - Temps Moy / Appel', round(temps_moy_com_pierre, 2))
-                colp3.metric('Pierre - Nb Appels / Jour', round(nb_appels_jour_pierre, 2))
+                    colm1, colm2, colm3= st.columns(3)
+                    colm1.metric('Mourad - Com Moy / Jour', com_jour_mourad)
+                    colm2.metric('Mourad - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_mourad))
+                    colm3.metric('Mourad - Nb Appels / Jour', round(nb_appels_jour_mourad, 2))
 
-                cola1, cola2, cola3= st.columns(3)
-                cola1.metric('Archimède - Com Moy / Jour', com_jour_archimede)
-                cola2.metric('Archimède - Temps Moy / Appel', round(temps_moy_com_archimede, 2))
-                cola3.metric('Archimède - Nb Appels / Jour', round(nb_appels_jour_archimede, 2))
+                    colo1, colo2, colo3= st.columns(3)
+                    colo1.metric('Olivier - Com Moy / Jour', com_jour_olivier)
+                    colo2.metric('Olivier - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_olivier))
+                    colo3.metric('Olivier - Nb Appels / Jour', round(nb_appels_jour_olivier, 2))
 
-                st.plotly_chart(graph_charge_agent(df_charge), use_container_width=True)
+                    colp1, colp2, colp3= st.columns(3)
+                    colp1.metric('Pierre - Com Moy / Jour', com_jour_pierre)
+                    colp2.metric('Pierre - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_pierre))
+                    colp3.metric('Pierre - Nb Appels / Jour', round(nb_appels_jour_pierre, 2))
+
+                    cola1, cola2, cola3= st.columns(3)
+                    cola1.metric('Archimède - Com Moy / Jour', com_jour_archimede)
+                    cola2.metric('Archimède - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_archimede))
+                    cola3.metric('Archimède - Nb Appels / Jour', round(nb_appels_jour_archimede, 2))
+
+                    st.plotly_chart(graph_charge_agent(df_charge), use_container_width=True)
+
+
+                    colm1, colm2= st.columns(2)
+                    colm1.plotly_chart(charge_entrant_sortant (df_support, 'Mourad HUMBLOT'))
+                    colm2.plotly_chart(charge_entrant_sortant (df_support, 'Archimede KESSI'))
+
+                    coln1, coln2= st.columns(2)
+                    coln1.plotly_chart(charge_entrant_sortant (df_support, 'Olivier Sainte-Rose'))
+                    coln2.plotly_chart(charge_entrant_sortant (df_support, 'Pierre GOUPILLON'))
+
+                    coln1.plotly_chart(charge_entrant_sortant (df_support, 'Christophe Brichet'))
+
+                else : 
+
+                    colm1, colm2, colm3= st.columns(3)
+                    colm1.metric('Mourad - Com Moy / Jour', com_jour_mourad)
+                    colm2.metric('Mourad - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_mourad))
+                    colm3.metric('Mourad - Nb Appels / Jour', round(nb_appels_jour_mourad, 2))
 
             agents()
 
