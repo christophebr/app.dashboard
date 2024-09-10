@@ -56,7 +56,7 @@ def df_selection_support(df_support, start_date, end_date):
 
     # Filtrer le DataFrame pour la période sélectionnée
     df_support = df_support[(df_support['StartTime'] >= start_date) & (df_support['StartTime'] <= end_date)]
-    
+
     # Calculer la durée de la période sélectionnée
     duration = end_date - start_date
 
@@ -92,6 +92,11 @@ def df_selection_support(df_support, start_date, end_date):
 #
 #    return df_support, df2
 
+def convert_to_sixtieth(seconds):
+    minutes, seconds = divmod(seconds, 60)  # Convertir en heures
+    return f"{int(minutes)}m{int(seconds):02d}s"
+
+
 
 def metrics_support(df_support, df2) : 
 
@@ -101,7 +106,7 @@ def metrics_support(df_support, df2) :
     Entrant = df_support.groupby('Date').agg({'Entrant':'sum'}).mean().values[0].astype(int)
     Entrant_before  = df2.groupby('Date').agg({'Entrant':'sum'}).mean().values[0].astype(int)
 
-    Numero_unique = df_support.groupby('Date').agg({'Number':'nunique'}).mean().values[0].astype(int)
+    Numero_unique = df_support[(df_support['direction'] == 'inbound')].groupby('Date').agg({'Number':'nunique'}).mean().values[0].astype(int)
     Numero_unique_before  = df2.groupby('Date').agg({'Number':'nunique'}).mean().values[0].astype(int)
 
     temps_moy_appel = df_support[(df_support['InCallDuration'] > 0)].InCallDuration.mean()
