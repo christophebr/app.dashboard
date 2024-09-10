@@ -12,7 +12,9 @@ def graph_activite (df_support) :
     from plotly.subplots import make_subplots
     import plotly.graph_objects as go
     
-    data_graph1 = df_support.groupby(['Semaine']).agg({'Entrant':'sum',
+    data_graph1 = df_support[((df_support['direction'] == 'inbound'))]
+    
+    data_graph1 = data_graph1.groupby(['Semaine']).agg({'Entrant':'sum',
                                                     'Entrant_connect':'sum',
                                                     'Number':'nunique',
                                                     'Effectif':'mean'}).rename(columns = {"Number":"Numero_unique",}).reset_index()
@@ -295,7 +297,7 @@ def calcul_productivite_appels(df_support, agent):
 
     com_jour = df_support['InCallDuration_format'].mean()
     com_jour = com_jour.strftime('%H:%M:%S')
-    temps_moy_com = (df_support['InCallDuration'] /  df_support['Number'] / 60).mean()
+    temps_moy_com = (df_support['InCallDuration'] /  df_support['Number']).mean()
     nb_appels_jour = df_support['Number'].mean()
 
     #df_support['Productivite_appels'] = (df_support['Number'] / 420) * 60
@@ -369,6 +371,27 @@ def graph_charge_agent (df):
             )
     
     return fig6
+
+
+def charge_entrant_sortant (df_support, agent): 
+    df_support = df_support[(df_support['UserName'] == agent) & 
+           (df_support['LastState'] == 'yes')].groupby(['Semaine', 'direction']).agg({'line':'count'}).reset_index()
+    
+
+    fig = px.histogram(df_support, x="Semaine", y='line', color="direction", 
+                       title= agent)
+    
+    fig.update_layout(
+         yaxis_title="Appels",
+         yaxis=dict(range=[0, 200])  # Ajuste la plage de l'axe y entre 0 et 100
+        )
+    
+
+    return fig
+    
+
+
+
 
 
 
