@@ -9,6 +9,10 @@ credentials = {
         "mpec": {
             "name": "Miguel Pecqueux",
             "password": ""  # Placeholder, to be updated with the hashed password
+        },
+        "elap": {
+            "name": "Eric Laporte",
+            "password": ""  # Placeholder, to be updated with the hashed password
         }
     }
 }
