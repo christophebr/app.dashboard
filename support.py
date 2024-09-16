@@ -34,8 +34,8 @@ def parameters_support ():
 
 
     # Date de début et de fin par défaut
-    start_date = st.date_input("Select a start date", min_date, min_value=min_date, max_value=max_date)
-    end_date = st.date_input("Select an end date", max_date, min_value=min_date, max_value=max_date)
+    start_date = st.date_input("Date de départ", min_date, min_value=min_date, max_value=max_date)
+    end_date = st.date_input("Date de fin", max_date, min_value=min_date, max_value=max_date)
 
 
     #values = st.slider(
@@ -110,6 +110,7 @@ def metrics_support(df_support, df2) :
     Numero_unique_before  = df2.groupby('Date').agg({'Number':'nunique'}).mean().values[0].astype(int)
 
     temps_moy_appel = df_support[(df_support['InCallDuration'] > 0)].InCallDuration.mean()
+    
     temps_moy_appel_before = df2[(df2['InCallDuration'] > 0)].InCallDuration.mean()
     tendance_appel = temps_moy_appel_before / temps_moy_appel
 
