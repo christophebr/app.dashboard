@@ -24,13 +24,14 @@ with file_path.open('rb') as file:
     hashed_passwords = pickle.load(file)
 
 
-file_path = Path(__file__).parent / 'hashed_pw.pkl'
-with file_path.open('rb') as file: 
-    hashed_passwords = pickle.load(file)
+#file_path = Path(__file__).parent / 'hashed_pw.pkl'
+#with file_path.open('rb') as file: 
+#    hashed_passwords = pickle.load(file)
 
 # Mettre à jour le dictionnaire des credentials avec les mots de passe hachés
 config.credentials['usernames']['cbri']['password'] = hashed_passwords['cbri']
 config.credentials['usernames']['mpec']['password'] = hashed_passwords['mpec']
+config.credentials['usernames']['elap']['password'] = hashed_passwords['elap']
 
 # Initialiser l'authentificateur avec le dictionnaire des credentials
 authenticator = stauth.Authenticate(config.credentials, 'dashboard_support', 'support', cookie_expiry_days=2)
@@ -66,16 +67,19 @@ if authentification_status :
         if selection_page == "Support":
 
             from support import read_df_aircall
+            import pandas as pd
             from support import read_df_jira_support
             from support import parameters_support
             from support import df_selection_support
             from support import metrics_support
             from support import tickets_support , convert_to_sixtieth
-            from Data_support import graph_activite , graph_taux_jour , graph_taux_heure
+            from Data_support import graph_activite , graph_taux_jour , graph_taux_heure, graph_tag
             from Data_support import graph_charge_affid_stellair, calcul_taux_reponse, calcul_productivite_appels
             import plotly.graph_objects as go
             from data_process_aircall import def_df_support
             from data_process_aircall import data_affid, line_support, agents_support, line_armatis, agents_armatis
+
+                
 
             def support():
                 st.title(" :bar_chart: Dashboard support affid")
@@ -111,18 +115,25 @@ if authentification_status :
 
                 start_date, end_date  = parameters_support()
                 df_support, df2 = df_selection_support(df_support,start_date, end_date)
+                fig_charge_affid_stellair_pour , fig_charge_affid_stellair_nb = graph_charge_affid_stellair(df_support)
                 
                 taux_reponse, mean_difference, df_taux_reponse =  calcul_taux_reponse (df_support)
 
                 [Taux_de_service , tendance_taux, Entrant, tendance_entrant, Numero_unique, 
                 tendance_unique, temps_moy_appel, tendance_appel, Nombre_appel_jour_agent] = metrics_support(df_support, df2)
 
+                fig_tags_cat_afd, temps_moy_appel_afd = graph_tag('AFD', df_support)
+                fig_tags_cat_ste, temps_moy_appel_ste = graph_tag('STE', df_support)
+
+                # Créer un DataFrame initial
+                nb_tickets_mois_ssia = {'mois': ['juin', 'juillet', 'aout'], 'ticket': [176, 180, 155], 'année': [2023, 2023, 2023]}
+                nb_tickets_mois_ssia = pd.DataFrame(nb_tickets_mois_ssia)
                 #df_grouped_ticket = tickets_support(df_tickets, option_pipeline, defaut_val)
 
                 col1, col2, col3= st.columns(3)
-                col1.metric("Taux de service en %", Taux_de_service, tendance_taux)
-                col2.metric("Appels entrant / Jour",Entrant, tendance_entrant)
-                col3.metric("Numéros unique entrant / Jour", Numero_unique, tendance_unique)
+                col1.metric("Taux de service en %", Taux_de_service)
+                col2.metric("Appels entrant / Jour",Entrant)
+                col3.metric("Numéros unique entrant / Jour", Numero_unique)
                 col_1, col_2, col_3 = st.columns(3)
                 #col_1.metric("Temps Moy / Appel", round((temps_moy_appel / 60),2), tendance_appel)
                 col_1.metric("Temps Moy / Appel", convert_to_sixtieth(temps_moy_appel))
@@ -132,12 +143,28 @@ if authentification_status :
                 st.plotly_chart(graph_activite(df_support), use_container_width=True)
                 #st.plotly_chart(tickets_support(df_tickets), use_container_width=True)
 
-                col_graph1, col_graph2 = st.columns(2)
-                col_graph1.plotly_chart(graph_taux_jour(df_support))
-                col_graph2.plotly_chart(graph_taux_heure(df_support))
 
-                col_graph11, col_graph22 = st.columns(2)
-                col_graph11.plotly_chart(graph_charge_affid_stellair(df_support))
+                col_graph1, col_graph2 = st.columns(2)
+                col_graph1.plotly_chart(graph_taux_jour(df_support), use_container_width=True)
+                col_graph2.plotly_chart(graph_taux_heure(df_support), use_container_width=True)
+
+                if dataframe_option == "df_support":
+                    col_graph11, col_graph22 = st.columns(2)
+                    col_graph11.plotly_chart(fig_charge_affid_stellair_pour, use_container_width=True)
+                    col_graph22.plotly_chart(fig_charge_affid_stellair_nb, use_container_width=True)
+                else: 
+                    col_graph11, col_graph22 = st.columns(2)
+
+            
+                #col_stat_afd, col_stat_ste= st.columns(2)
+                #col_stat_afd.metric("Temps Moy / Appel - NXT", temps_moy_appel_afd)
+                #col_stat_ste.metric("Temps Moy / Appel - STE", temps_moy_appel_ste)
+
+                col_cat_afd, col_cat_ste= st.columns(2)
+                col_cat_afd.plotly_chart(fig_tags_cat_afd, use_container_width=True)
+                col_cat_ste.plotly_chart(fig_tags_cat_ste, use_container_width=True)
+
+
 
 
             support()
@@ -204,6 +231,7 @@ if authentification_status :
                 com_jour_pierre, temps_moy_com_pierre, nb_appels_jour_pierre = calcul_productivite_appels(df_support, 'Pierre GOUPILLON')
                 com_jour_archimede, temps_moy_com_archimede, nb_appels_jour_archimede = calcul_productivite_appels(df_support, 'Archimede KESSI')
 
+
                 if dataframe_option == "df_support":
 
                     colm1, colm2, colm3= st.columns(3)
@@ -229,15 +257,16 @@ if authentification_status :
                     st.plotly_chart(graph_charge_agent(df_charge), use_container_width=True)
 
 
+
                     colm1, colm2= st.columns(2)
-                    colm1.plotly_chart(charge_entrant_sortant (df_support, 'Mourad HUMBLOT'))
-                    colm2.plotly_chart(charge_entrant_sortant (df_support, 'Archimede KESSI'))
+                    colm1.plotly_chart(charge_entrant_sortant (df_support, 'Mourad HUMBLOT'), use_container_width=True)
+                    colm2.plotly_chart(charge_entrant_sortant (df_support, 'Archimede KESSI'), use_container_width=True)
 
                     coln1, coln2= st.columns(2)
-                    coln1.plotly_chart(charge_entrant_sortant (df_support, 'Olivier Sainte-Rose'))
-                    coln2.plotly_chart(charge_entrant_sortant (df_support, 'Pierre GOUPILLON'))
+                    coln1.plotly_chart(charge_entrant_sortant (df_support, 'Olivier Sainte-Rose'), use_container_width=True)
+                    coln2.plotly_chart(charge_entrant_sortant (df_support, 'Pierre GOUPILLON'), use_container_width=True)
 
-                    coln1.plotly_chart(charge_entrant_sortant (df_support, 'Christophe Brichet'))
+                    coln1.plotly_chart(charge_entrant_sortant (df_support, 'Christophe Brichet'), use_container_width=True)
 
                 else : 
 
