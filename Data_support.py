@@ -224,7 +224,7 @@ def graph_charge_affid_stellair(df_support):
     fig.update_yaxes(tickformat=".0%", secondary_y=False)
 
     fig.update_layout(
-        title_text="Activité & Taux de service / Heure",
+        title_text="Activité en % - NXT & Stellair",
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -234,7 +234,26 @@ def graph_charge_affid_stellair(df_support):
         )
     )
     
-    return fig
+    liste_fig2_stellair_affid = ['stellair', 'affid']
+    fig2 = px.bar(df_resultats, 
+                x = df_resultats.Semaine,
+                y = [c for c in liste_fig2_stellair_affid],
+                template = 'plotly_dark',
+                )
+    
+    fig2.update_layout(
+        title_text="Activité en Nb - NXT & Stellair",
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
+    )
+
+    
+    return fig, fig2
 
 
 def calcul_taux_reponse (df_support): 
@@ -388,6 +407,26 @@ def charge_entrant_sortant (df_support, agent):
     
 
     return fig
+
+
+def graph_tag(logiciel, df_support): 
+
+    df = df_support[df_support['Tags'].str.startswith(logiciel)]
+
+    df['categories_split'] = df['Tags'].str.split(' / ')  # Séparer par ' / '
+    df_exploded = df.explode('categories_split')  # Convertir chaque sous-catégorie en ligne distincte
+
+    counts = df_exploded['categories_split'].value_counts().reset_index()
+    counts.columns = ['category', 'count']
+
+    top_20 = counts.head(20)
+    top_20 = top_20.sort_values(by='count', ascending=True)
+
+    fig = px.bar(top_20, x='count', y='category', orientation='h', title='Top 20 des catégories' + " " +logiciel)
+
+    temps_moy_appel_cat = df[(df['InCallDuration'] > 0)].InCallDuration.mean()
+
+    return fig, temps_moy_appel_cat
     
 
 
