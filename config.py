@@ -13,6 +13,26 @@ credentials = {
         "elap": {
             "name": "Eric Laporte",
             "password": ""  # Placeholder, to be updated with the hashed password
+        },
+        "pgou": {
+            "name": "Pierre Goupillon",
+            "password": ""  # Placeholder, to be updated with the hashed password
+        },
+        "osai": {
+            "name": "Olivier Sainte-Rose",
+            "password": ""  # Placeholder, to be updated with the hashed password
+        }, 
+        "mhum": {
+            "name": "Mourad Humblot",
+            "password": ""  # Placeholder, to be updated with the hashed password
+        }, 
+        "fsau": {
+            "name": "Frederic Sauvan",
+            "password": ""  # Placeholder, to be updated with the hashed password
+        }, 
+        "akes": {
+            "name": "Archimede Kessi",
+            "password": ""  # Placeholder, to be updated with the hashed password
         }
     }
 }
