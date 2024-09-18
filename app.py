@@ -32,6 +32,11 @@ with file_path.open('rb') as file:
 config.credentials['usernames']['cbri']['password'] = hashed_passwords['cbri']
 config.credentials['usernames']['mpec']['password'] = hashed_passwords['mpec']
 config.credentials['usernames']['elap']['password'] = hashed_passwords['elap']
+config.credentials['usernames']['pgou']['password'] = hashed_passwords['pgou']
+config.credentials['usernames']['osai']['password'] = hashed_passwords['osai']
+config.credentials['usernames']['fsau']['password'] = hashed_passwords['fsau']
+config.credentials['usernames']['mhum']['password'] = hashed_passwords['mhum']
+config.credentials['usernames']['akes']['password'] = hashed_passwords['akes']
 
 # Initialiser l'authentificateur avec le dictionnaire des credentials
 authenticator = stauth.Authenticate(config.credentials, 'dashboard_support', 'support', cookie_expiry_days=2)
