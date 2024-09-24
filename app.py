@@ -37,6 +37,7 @@ config.credentials['usernames']['osai']['password'] = hashed_passwords['osai']
 config.credentials['usernames']['fsau']['password'] = hashed_passwords['fsau']
 config.credentials['usernames']['mhum']['password'] = hashed_passwords['mhum']
 config.credentials['usernames']['akes']['password'] = hashed_passwords['akes']
+config.credentials['usernames']['dlau']['password'] = hashed_passwords['dlau']
 
 # Initialiser l'authentificateur avec le dictionnaire des credentials
 authenticator = stauth.Authenticate(config.credentials, 'dashboard_support', 'support', cookie_expiry_days=2)
