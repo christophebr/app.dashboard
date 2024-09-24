@@ -338,21 +338,21 @@ def charge_agents (agent, df) :
     df_charge_agent = df[(df['UserName'] == agent )]
     df_charge_agent = df_charge_agent.groupby(['Date']).agg({'InCallDuration':'sum'})
     df_charge_agent['InCallDuration'] = df_charge_agent['InCallDuration'] / 60 
-    df_charge_agent[agent] = df_charge_agent['InCallDuration'] / 180
+    df_charge_agent[agent] = df_charge_agent['InCallDuration']
     df_charge_agent = df_charge_agent.groupby(['Date']).agg({agent:'mean',}).reset_index()
     df_charge_agent = df_charge_agent[['Date', agent]]
     
     return df_charge_agent
 
 
-def graph_charge_agent (df): 
+def graph_charge_agent (df, liste_agents): 
 
     data_graph2 = df
 
 
     data_graph2['Cible'] = data_graph2['Effectif'] * 0.70 
 
-    liste10 = ['Pierre GOUPILLON', 'Mourad HUMBLOT', 'Olivier Sainte-Rose', 'Frederic SAUVAN', 'Archimede KESSI']
+    #liste_agents = ['Pierre GOUPILLON', 'Mourad HUMBLOT', 'Olivier Sainte-Rose', 'Frederic SAUVAN', 'Archimede KESSI']
 
     data_graph2['Date'] = pd.to_datetime(data_graph2['Date'])
 
@@ -363,18 +363,18 @@ def graph_charge_agent (df):
 
     fig6 = px.bar(data_weekly, 
                 x = data_weekly.Date,
-                y = [c for c in liste10],
+                y = [c for c in liste_agents],
                 template = 'plotly_dark',
                 title = 'Stacked bar chart using px.bar()', 
                 )
 
 
-    fig6.add_trace(go.Scatter(x=data_weekly.Date,
-                            y=data_weekly['Cible'],
-                            mode='lines',
-                            name='Cible',
-                            line=dict(color='red'),
-                            ))
+    #fig6.add_trace(go.Scatter(x=data_weekly.Date,
+    #                        y=data_weekly['Cible'],
+    #                        mode='lines',
+    #                        name='Cible',
+    #                        line=dict(color='red'),
+    #                        ))
 
     fig6.update_layout(
             title_text="Activité & Taux de service - 20 semaines",
