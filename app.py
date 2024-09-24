@@ -205,39 +205,37 @@ if authentification_status :
                     df_support = def_df_support(data_affid, data_affid, line_armatis, agents_armatis)
 
                 #df_support = read_df_aircall()
-                df_support = def_df_support(data_affid, data_affid, line_support, agents_support)
+                #df_support = def_df_support(data_affid, data_affid, line_support, agents_support)
                 start_date, end_date  = parameters_support()
 
                 #df_support, df2, df_tickets, df3 = df_selection_support(df_support,df2, df_tickets, df3,values)
                 df_support, df2 = df_selection_support(df_support,start_date, end_date)
                 #df2, df_tickets, df3
 
-                df_charge_pierre = charge_agents('Pierre GOUPILLON', df_support)
-                df_charge_olivier = charge_agents('Olivier Sainte-Rose', df_support)
-                df_charge_mourad = charge_agents('Mourad HUMBLOT', df_support)
-                df_charge_archimede = charge_agents('Archimede KESSI', df_support)
-                df_charge_frederic = charge_agents('Frederic SAUVAN', df_support)
-
-                liste_data = [df_charge_pierre, df_charge_olivier, df_charge_mourad, 
-                            df_charge_archimede, df_charge_frederic]
-                df_charge = reduce(lambda  left,right: pd.merge(left,right,on=['Date'],how='outer'),liste_data).reset_index()
-                df_charge = df_charge.sort_values(['Date'], ascending=True)
-
-                df_charge_effectif = df_support.groupby(['Date']).agg({'Effectif':'mean'}).reset_index()
-                df_charge = pd.merge(df_charge, df_charge_effectif, left_on='Date', right_on='Date', how = "left",)
-
-                com_jour_mourad, temps_moy_com_mourad, nb_appels_jour_mourad = calcul_productivite_appels(df_support, 'Mourad HUMBLOT')
-                com_jour_olivier, temps_moy_com_olivier, nb_appels_jour_olivier = calcul_productivite_appels(df_support, 'Olivier Sainte-Rose')
-                com_jour_pierre, temps_moy_com_pierre, nb_appels_jour_pierre = calcul_productivite_appels(df_support, 'Pierre GOUPILLON')
-                com_jour_archimede, temps_moy_com_archimede, nb_appels_jour_archimede = calcul_productivite_appels(df_support, 'Archimede KESSI')
-
-                com_jour_mourad, temps_moy_com_mourad, nb_appels_jour_mourad = calcul_productivite_appels(df_support, 'Mourad HUMBLOT')
-                com_jour_olivier, temps_moy_com_olivier, nb_appels_jour_olivier = calcul_productivite_appels(df_support, 'Olivier Sainte-Rose')
-                com_jour_pierre, temps_moy_com_pierre, nb_appels_jour_pierre = calcul_productivite_appels(df_support, 'Pierre GOUPILLON')
-                com_jour_archimede, temps_moy_com_archimede, nb_appels_jour_archimede = calcul_productivite_appels(df_support, 'Archimede KESSI')
-
 
                 if dataframe_option == "df_support":
+
+                    liste_agents = ['Pierre GOUPILLON', 'Mourad HUMBLOT', 'Olivier Sainte-Rose', 'Frederic SAUVAN', 'Archimede KESSI']
+
+                    df_charge_pierre = charge_agents('Pierre GOUPILLON', df_support)
+                    df_charge_olivier = charge_agents('Olivier Sainte-Rose', df_support)
+                    df_charge_mourad = charge_agents('Mourad HUMBLOT', df_support)
+                    df_charge_archimede = charge_agents('Archimede KESSI', df_support)
+                    df_charge_frederic = charge_agents('Frederic SAUVAN', df_support)
+
+
+                    liste_data = [df_charge_pierre, df_charge_olivier, df_charge_mourad, 
+                                df_charge_archimede, df_charge_frederic]
+                    df_charge = reduce(lambda  left,right: pd.merge(left,right,on=['Date'],how='outer'),liste_data).reset_index()
+                    df_charge = df_charge.sort_values(['Date'], ascending=True)
+
+                    df_charge_effectif = df_support.groupby(['Date']).agg({'Effectif':'mean'}).reset_index()
+                    df_charge = pd.merge(df_charge, df_charge_effectif, left_on='Date', right_on='Date', how = "left",)
+
+                    com_jour_mourad, temps_moy_com_mourad, nb_appels_jour_mourad = calcul_productivite_appels(df_support, 'Mourad HUMBLOT')
+                    com_jour_olivier, temps_moy_com_olivier, nb_appels_jour_olivier = calcul_productivite_appels(df_support, 'Olivier Sainte-Rose')
+                    com_jour_pierre, temps_moy_com_pierre, nb_appels_jour_pierre = calcul_productivite_appels(df_support, 'Pierre GOUPILLON')
+                    com_jour_archimede, temps_moy_com_archimede, nb_appels_jour_archimede = calcul_productivite_appels(df_support, 'Archimede KESSI')
 
                     colm1, colm2, colm3= st.columns(3)
                     colm1.metric('Mourad - Com Moy / Jour', com_jour_mourad)
@@ -259,7 +257,7 @@ if authentification_status :
                     cola2.metric('Archimède - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_archimede))
                     cola3.metric('Archimède - Nb Appels / Jour', round(nb_appels_jour_archimede, 2))
 
-                    st.plotly_chart(graph_charge_agent(df_charge), use_container_width=True)
+                    st.plotly_chart(graph_charge_agent(df_charge, liste_agents), use_container_width=True)
 
 
 
@@ -275,10 +273,57 @@ if authentification_status :
 
                 else : 
 
+                    liste_agents = ['Emilie GEST', 'Sandrine Sauvage', 'Morgane Vandenbussche', 'Melinda Marmin']
+
+                    df_charge_emilie = charge_agents('Emilie GEST', df_support)
+                    df_charge_sandrine = charge_agents('Sandrine Sauvage', df_support)
+                    df_charge_morgane = charge_agents('Morgane Vandenbussche', df_support)
+                    df_charge_melinda = charge_agents('Melinda Marmin', df_support)
+
+
+                    liste_data = [df_charge_emilie, df_charge_sandrine, df_charge_morgane, 
+                                df_charge_melinda]
+                    df_charge = reduce(lambda  left,right: pd.merge(left,right,on=['Date'],how='outer'),liste_data).reset_index()
+                    df_charge = df_charge.sort_values(['Date'], ascending=True)
+
+                    df_charge_effectif = df_support.groupby(['Date']).agg({'Effectif':'mean'}).reset_index()
+                    df_charge = pd.merge(df_charge, df_charge_effectif, left_on='Date', right_on='Date', how = "left",)
+
+                    com_jour_emilie, temps_moy_com_emilie, nb_appels_jour_emilie = calcul_productivite_appels(df_support, 'Emilie GEST')
+                    com_jour_sandrine, temps_moy_com_sandrine, nb_appels_jour_sandrine = calcul_productivite_appels(df_support, 'Sandrine Sauvage')
+                    com_jour_morgane, temps_moy_com_morgane, nb_appels_jour_morgane = calcul_productivite_appels(df_support, 'Morgane Vandenbussche')
+                    com_jour_melinda, temps_moy_com_melinda, nb_appels_jour_melinda = calcul_productivite_appels(df_support, 'Melinda Marmin')
+
                     colm1, colm2, colm3= st.columns(3)
-                    colm1.metric('Mourad - Com Moy / Jour', com_jour_mourad)
-                    colm2.metric('Mourad - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_mourad))
-                    colm3.metric('Mourad - Nb Appels / Jour', round(nb_appels_jour_mourad, 2))
+                    colm1.metric('Emilie - Com Moy / Jour', com_jour_emilie)
+                    colm2.metric('Emilie - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_emilie))
+                    colm3.metric('Emilie - Nb Appels / Jour', round(nb_appels_jour_emilie, 2))
+
+                    coln1, coln2, coln3= st.columns(3)
+                    colm1.metric('Sandrine - Com Moy / Jour', com_jour_sandrine)
+                    colm2.metric('Sandrine - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_sandrine))
+                    colm3.metric('Sandrine - Nb Appels / Jour', round(nb_appels_jour_sandrine, 2))
+
+                    colo1, colo2, colo3= st.columns(3)
+                    colm1.metric('Morgane - Com Moy / Jour', com_jour_morgane)
+                    colm2.metric('Morgane - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_morgane))
+                    colm3.metric('Morgane - Nb Appels / Jour', round(nb_appels_jour_morgane, 2))
+
+                    colp1, colp2, colp3= st.columns(3)
+                    colm1.metric('Melinda - Com Moy / Jour', com_jour_melinda)
+                    colm2.metric('Melinda - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_melinda))
+                    colm3.metric('Melinda - Nb Appels / Jour', round(nb_appels_jour_melinda, 2))
+
+                    st.plotly_chart(graph_charge_agent(df_charge, liste_agents), use_container_width=True)
+
+                    colq1, colq2= st.columns(2)
+                    colq1.plotly_chart(charge_entrant_sortant (df_support, 'Emilie GEST'), use_container_width=True)
+                    colq2.plotly_chart(charge_entrant_sortant (df_support, 'Sandrine Sauvage'), use_container_width=True)
+
+                    colr1, colr2= st.columns(2)
+                    colr1.plotly_chart(charge_entrant_sortant (df_support, 'Morgane Vandenbussche'), use_container_width=True)
+                    colr2.plotly_chart(charge_entrant_sortant (df_support, 'Melinda Marmin'), use_container_width=True)
+
 
             agents()
 
