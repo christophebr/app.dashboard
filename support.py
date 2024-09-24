@@ -110,7 +110,6 @@ def metrics_support(df_support, df2) :
     Numero_unique_before  = df2.groupby('Date').agg({'Number':'nunique'}).mean().values[0].astype(int)
 
     temps_moy_appel = df_support[(df_support['InCallDuration'] > 0)].InCallDuration.mean()
-    
     temps_moy_appel_before = df2[(df2['InCallDuration'] > 0)].InCallDuration.mean()
     tendance_appel = temps_moy_appel_before / temps_moy_appel
 
