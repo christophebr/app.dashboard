@@ -33,6 +33,10 @@ credentials = {
         "akes": {
             "name": "Archimede Kessi",
             "password": ""  # Placeholder, to be updated with the hashed password
+        },
+        "dlau": {
+            "name": "Dominique Laubier",
+            "password": ""  # Placeholder, to be updated with the hashed password
         }
     }
 }
