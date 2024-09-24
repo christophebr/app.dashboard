@@ -22,7 +22,8 @@ from datetime import datetime, time
 #path = %pwd
 path_source_affid_aircall = 'data/Affid/Aircall'
 files_aircall = [file for file in os.listdir(path_source_affid_aircall) if not file.startswith('.')] # Ignore hidden files
-
+    
+    
 data_affid_aircall = pd.DataFrame()
 
 for file in files_aircall:
@@ -120,7 +121,8 @@ data_affid['UserName'] = data_affid['UserName'].str.replace("Olivier SAINTE-ROSE
 agents = ['Olivier Sainte-Rose', 
           'Mourad HUMBLOT', 
           'Pierre GOUPILLON',
-          'Frederic SAUVAN']
+          'Frederic SAUVAN', 
+          'Christophe Brichet']
 
 frederic = ['Frederic SAUVAN']
 
@@ -128,17 +130,24 @@ agents_support = ['Olivier Sainte-Rose',
                   'Mourad HUMBLOT', 
                   'Pierre GOUPILLON', 
                   'Archimede KESSI', 
-                  'Frederic SAUVAN']
+                  'Frederic SAUVAN', 
+                  'Christophe Brichet']
 
-agents_armatis = ['Armatis Agent 1', 
-                  'Armatis Agent 2', 
-                  'Armatis Agent 3']
+agents_armatis = ['Melinda Marmin', 
+                  'Sandrine Sauvage', 
+                  'Emilie GEST', 
+                  'Morgane Vandenbussche']
 
 
-line_support = 'Technique'
-line_armatis = 'Armatis Technique'
+line_support = 'technique'
+line_armatis = 'armatistechnique'
 
 def def_df_support (df_entrant, df_sortant, line, liste_agents) :
+
+    def clean_string(s):
+        return ''.join(s.split()).lower()
+
+    df_entrant['line'] = df_entrant['line'].apply(clean_string)
     
     df_entrant = df_entrant[(df_entrant['line'] == line)
                           & (df_entrant['direction'] == 'inbound')]
@@ -149,7 +158,7 @@ def def_df_support (df_entrant, df_sortant, line, liste_agents) :
     
     def number(row):
         if row['FromNumber'] == (33187662300 or 33189730123 or 
-                                 33189730124 or 33189730125 or 33189730128):
+                                 33189730124 or 33189730125 or 33189730128 or 33189718190):
             return row['ToNumber']
         else:
             return row['FromNumber']
@@ -202,9 +211,10 @@ def def_df_support (df_entrant, df_sortant, line, liste_agents) :
         df_effectif = df_effectif[['Date', 'Effectif']]
         
     if liste_agents == agents_armatis : 
-        df_effectif['Effectif'] = (df_effectif['Armatis Agent 1']
-                                    + df_effectif['Armatis Agent 2']
-                                    + df_effectif['Armatis Agent 3'])
+        df_effectif['Effectif'] = (df_effectif['Melinda Marmin']
+                                    + df_effectif['Sandrine Sauvage']
+                                    + df_effectif['Emilie GEST']
+                                    + df_effectif['Morgane Vandenbussche'])
     
         df_effectif = df_effectif[['Date', 'Effectif']]
     
@@ -233,6 +243,17 @@ df_support = def_df_support(data_affid, data_affid, line_support, agents_support
 
 #df_support.to_excel('Data_process_prod.xlsx')
 
+def donnees_hubspot (): 
+
+    df_nb_tickets_ssia = pd.DataFrame({
+        'mois': ['juin', 'juillet', 'aout'],
+        'ticket': [176, 180, 155]
+    })
+    
+    return df
+
+
+
 def charge_agents (agent) : 
     df_charge_agent = df_support[(df_support['UserName'] == agent )]
     df_charge_agent = df_charge_agent.groupby(['Date']).agg({'InCallDuration':'sum'})
@@ -250,5 +271,7 @@ df_charge_olivier = charge_agents('Olivier Sainte-Rose')
 df_charge_mourad = charge_agents('Mourad HUMBLOT')
 df_charge_archimede = charge_agents('Archimede KESSI')
 df_charge_frederic = charge_agents('Frederic SAUVAN')
+df_charge_frederic = charge_agents('Christophe BRICHET')
+
 
     
