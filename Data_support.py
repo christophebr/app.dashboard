@@ -298,6 +298,76 @@ def calcul_taux_reponse (df_support):
     return taux_reponse, mean_difference, merged
 
 
+
+def calcul_taux_reponse2(df):
+    #today = pd.Timestamp.today()  # Assurez-vous d'avoir 'today' défini ici
+    #week = today - timedelta(weeks=nb)
+    
+    # Filtrer les données pour les dernières 'nb' semaines
+    #df = df[df['Date'] >= week]
+
+    # Convertir la colonne 'LastState' en booléen (True si 'yes', sinon False)
+    df['LastState'] = df['LastState'] == 'yes'
+
+    # Séparer les appels entrants et sortants
+    entrants = df[df['direction'] == 'inbound']
+    sortants = df[df['direction'] == 'outbound']
+
+    # Regrouper les appels sortants et entrants par Date et Number
+    grouped_sortants = sortants.groupby(['Date', 'Number']).agg({
+        'LastState': 'any',  # Si au moins un appel a eu une réponse
+        'StartTime':'mean'   # Calculer la moyenne des heures de début
+    }).reset_index()
+    
+    grouped_entrants = entrants.groupby(['Date', 'Number']).agg({
+        'LastState': 'any',
+        'StartTime':'mean'
+    }).reset_index()
+
+    # Renommer les colonnes pour les appels sortants
+    grouped_sortants = grouped_sortants.rename(columns={'LastState': 'Repondu_sortant', 'StartTime': 'Heure_sortant'})
+
+    # Fusionner les appels entrants et sortants sur Date et Number
+    merged = pd.merge(grouped_entrants, grouped_sortants, on=['Date', 'Number'], how='left')
+
+    # Remplir les valeurs manquantes pour 'Repondu_sortant' avec False
+    merged['Repondu_sortant'].fillna(False, inplace=True)
+
+    # Calculer le statut total de réponse
+    merged['Repondu_total'] = merged['LastState'] | merged['Repondu_sortant']
+
+    # Calculer le taux de réponse
+    taux_reponse = merged['Repondu_total'].mean()
+
+    # Convertir les colonnes de temps en format datetime
+    merged['StartTime'] = pd.to_datetime(merged['StartTime'])
+    merged['Heure_sortant'] = pd.to_datetime(merged['Heure_sortant'])
+
+    # Calculer la différence en minutes entre les appels entrants et sortants (exclure les cas où Heure_sortant < StartTime)
+    merged['minute_difference'] = np.where(
+        (merged['Repondu_sortant'] == True) & (merged['Heure_sortant'] >= merged['StartTime']),
+        (merged['Heure_sortant'] - merged['StartTime']) / pd.Timedelta(minutes=1),
+        np.nan
+    )
+
+    # Filtrer les valeurs négatives (ce cas est déjà traité en excluant les lignes où Heure_sortant < StartTime)
+    filtered_minute_difference = merged['minute_difference'][merged['minute_difference'] >= 0]
+
+    # Calculer la moyenne des différences en minutes
+    mean_difference = filtered_minute_difference.mean()
+
+    # Comptage des contacts qui n'ont pas été répondus (LastState == False)
+    contact_counts = df[df['LastState'] == False].groupby(['Date', 'Number']).size().reset_index(name='ContactCount')
+
+    # Fusionner les contacts non répondus avec le DataFrame fusionné
+    merged = pd.merge(merged, contact_counts, on=['Date', 'Number'], how='left')
+
+    # Remplacer les valeurs manquantes dans ContactCount par 0
+    merged['ContactCount'].fillna(0, inplace=True)
+
+    return taux_reponse, mean_difference, merged
+
+
 def calcul_productivite_appels(df_support, agent): 
 
     df_support = df_support[df_support[agent] == 1].groupby(['Date']).agg({'Number':'count', 
