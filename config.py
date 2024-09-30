@@ -37,6 +37,10 @@ credentials = {
         "dlau": {
             "name": "Dominique Laubier",
             "password": ""  # Placeholder, to be updated with the hashed password
+        },
+        "jdel": {
+            "name": "Julie Delplanque",
+            "password": ""  # Placeholder, to be updated with the hashed password
         }
     }
 }
