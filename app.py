@@ -38,6 +38,7 @@ config.credentials['usernames']['fsau']['password'] = hashed_passwords['fsau']
 config.credentials['usernames']['mhum']['password'] = hashed_passwords['mhum']
 config.credentials['usernames']['akes']['password'] = hashed_passwords['akes']
 config.credentials['usernames']['dlau']['password'] = hashed_passwords['dlau']
+config.credentials['usernames']['jdel']['password'] = hashed_passwords['jdel']
 
 # Initialiser l'authentificateur avec le dictionnaire des credentials
 authenticator = stauth.Authenticate(config.credentials, 'dashboard_support', 'support', cookie_expiry_days=2)
@@ -80,7 +81,7 @@ if authentification_status :
             from support import metrics_support
             from support import tickets_support , convert_to_sixtieth
             from Data_support import graph_activite , graph_taux_jour , graph_taux_heure, graph_tag
-            from Data_support import graph_charge_affid_stellair, calcul_taux_reponse, calcul_productivite_appels
+            from Data_support import graph_charge_affid_stellair, calcul_taux_reponse2, calcul_productivite_appels
             import plotly.graph_objects as go
             from data_process_aircall import def_df_support
             from data_process_aircall import data_affid, line_support, agents_support, line_armatis, agents_armatis
@@ -123,7 +124,7 @@ if authentification_status :
                 df_support, df2 = df_selection_support(df_support,start_date, end_date)
                 fig_charge_affid_stellair_pour , fig_charge_affid_stellair_nb = graph_charge_affid_stellair(df_support)
                 
-                taux_reponse, mean_difference, df_taux_reponse =  calcul_taux_reponse (df_support)
+                taux_reponse, mean_difference, df_taux_reponse =  calcul_taux_reponse2(df_support)
 
                 [Taux_de_service , tendance_taux, Entrant, tendance_entrant, Numero_unique, 
                 tendance_unique, temps_moy_appel, tendance_appel, Nombre_appel_jour_agent] = metrics_support(df_support, df2)
@@ -144,7 +145,10 @@ if authentification_status :
                 #col_1.metric("Temps Moy / Appel", round((temps_moy_appel / 60),2), tendance_appel)
                 col_1.metric("Temps Moy / Appel", convert_to_sixtieth(temps_moy_appel))
                 col_2.metric("Nombre appels jour / agent", Nombre_appel_jour_agent)
-                col_3.metric('Taux clients répondus en %', round(taux_reponse * 100))  
+                col_3.metric('Taux clients répondus en %', round(taux_reponse * 100)) 
+
+                col4, col5, col6 = st.columns(3)
+                col4.metric('Temps moyen avant rappel en min', round(mean_difference)) 
 
                 st.plotly_chart(graph_activite(df_support), use_container_width=True)
                 #st.plotly_chart(tickets_support(df_tickets), use_container_width=True)
