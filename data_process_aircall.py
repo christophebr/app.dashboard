@@ -20,15 +20,50 @@ from datetime import datetime, time
 
 
 #path = %pwd
-path_source_affid_aircall = 'data/Affid/Aircall'
-files_aircall = [file for file in os.listdir(path_source_affid_aircall) if not file.startswith('.')] # Ignore hidden files
+path_source_affid_aircall_v1 = 'data/Affid/Aircall/data_v1'
+path_source_affid_aircall_v2 = 'data/Affid/Aircall/data_v2'
+files_aircall_v1 = [file for file in os.listdir(path_source_affid_aircall_v1) if not file.startswith('.')] # Ignore hidden files
+files_aircall_v2 = [file for file in os.listdir(path_source_affid_aircall_v2) if not file.startswith('.')] # Ignore hidden files    
     
-    
-data_affid_aircall = pd.DataFrame()
+data_affid_aircall_v1 = pd.DataFrame()
+data_affid_aircall_v2 = pd.DataFrame()
 
-for file in files_aircall:
-    current_data_aircall = pd.read_excel(path_source_affid_aircall +"/"+ file)
-    data_affid_aircall = pd.concat([data_affid_aircall, current_data_aircall])
+for file in files_aircall_v1:
+    current_data_aircall_v1 = pd.read_excel(path_source_affid_aircall_v1 +"/"+ file)
+    data_affid_aircall_v1 = pd.concat([data_affid_aircall_v1, current_data_aircall_v1])
+
+for file in files_aircall_v2:
+    current_data_aircall_v2 = pd.read_excel(path_source_affid_aircall_v2 +"/"+ file)
+    data_affid_aircall_v2 = pd.concat([data_affid_aircall_v2, current_data_aircall_v2])
+
+
+data_affid_aircall_v1['datetime (UTC)'] = pd.to_datetime(data_affid_aircall_v1['datetime (UTC)'], errors='coerce', dayfirst=False)
+data_affid_aircall_v1['datetime (UTC)'] = data_affid_aircall_v1['datetime (UTC)'].dt.strftime('%d/%m/%Y %H:%M')
+data_affid_aircall_v1['datetime (UTC)'] = pd.to_datetime(data_affid_aircall_v1['datetime (UTC)'], format='%d/%m/%Y %H:%M')
+
+data_affid_aircall_v2['datetime (UTC)'] = pd.to_datetime(data_affid_aircall_v2['datetime (UTC)'], errors='coerce', dayfirst=False)
+data_affid_aircall_v2['datetime (UTC)'] = data_affid_aircall_v2['datetime (UTC)'].dt.strftime('%d/%m/%Y %H:%M')
+data_affid_aircall_v2['datetime (UTC)'] = pd.to_datetime(data_affid_aircall_v2['datetime (UTC)'], format='%d/%m/%Y %H:%M')
+
+data_affid_aircall_v1['IVR Branch'] = ""
+
+
+data_affid_aircall_v1 = data_affid_aircall_v1[['line', 'date (TZ offset incl.)', 'time (TZ offset incl.)', 'number timezone', 'datetime (UTC)', 'country_code', 'direction', 'from',
+                                               'to', 'answered','missed_call_reason', 'user', 'duration (total)','duration (in call)', 'via', 'voicemail', 'tags', 'IVR Branch']]
+
+
+columns_to_select  = data_affid_aircall_v1.columns.tolist()
+
+data_affid_aircall_v2 = data_affid_aircall_v2[columns_to_select]
+
+
+
+
+data_affid_aircall = pd.concat([data_affid_aircall_v1, data_affid_aircall_v2])
+
+#data_affid_aircall['datetime (UTC)'] = pd.to_datetime(data_affid_aircall['datetime (UTC)'], errors='coerce', dayfirst=False)
+#data_affid_aircall['datetime (UTC)'] = data_affid_aircall['datetime (UTC)'].dt.strftime('%d/%m/%Y %H:%M')
+#data_affid_aircall['datetime (UTC)'] = pd.to_datetime(data_affid_aircall['datetime (UTC)'], format='%d/%m/%Y %H:%M')
 
 data_affid_aircall = data_affid_aircall.loc[data_affid_aircall["line"].isin(["Standard - √† porter (sortants)", "Standard - Ã  porter (sortants)", "Standard", "Technique", "Commerce", "ADV", "Armatis", "Armatis Technique"])]
 data_affid_aircall['HangupTime'] = pd.to_datetime(data_affid_aircall['time (TZ offset incl.)'], format='%H:%M:%S') + pd.to_timedelta(data_affid_aircall['duration (in call)'], unit='s')
@@ -46,14 +81,10 @@ data_affid_aircall.rename(columns = {"answered":"LastState",
                                      "tags":"Tags", 
                                      "missed_call_reason":"ScenarioName",}, inplace = True)
 
-
 data_affid_aircall = data_affid_aircall[['line', 'direction', 
                                          'LastState', 'StartTime','HangupTime', 'time (TZ offset incl.)',
                                          'TotalDuration', 'InCallDuration', 'FromNumber',
-                                         'ToNumber', 'UserName', 'Note', 'Tags', 'ScenarioName']]
-
-
-
+                                         'ToNumber', 'UserName', 'Tags', 'IVR Branch', 'ScenarioName']]
 
 
 
@@ -70,7 +101,9 @@ data_affid["LastState"] = data_affid["LastState"].map({
                                      "CANCELLED":"no",
                                      "QUEUE_TIMEOUT":"no", 
                                      "yes":"yes",
-                                     "no":"no"},)
+                                     "no":"no",
+                                     "Yes":"yes",
+                                     "No":"no"},)
 
 
 data_affid["Semaine"] = data_affid['StartTime'].dt.strftime("S%Y-%V")
@@ -82,13 +115,14 @@ data_affid["Jour"] = data_affid["StartTime"].dt.day_name()
 data_affid = data_affid.loc[~data_affid["Jour"].isin(["Saturday", "Sunday"])]
 data_affid = data_affid.loc[~data_affid["ScenarioName"].isin(["Ferm√©",
                                                               "out_of_opening_hours",
-                                                              "abandoned_in_ivr"])]
+                                                              "abandoned_in_ivr", 
+                                                              'short_abandoned'])]
 
 from datetime import date
 
 #data_affid['tags'] = data_affid['Tags'].str.replace('[^a-zA-Z-,]', '')
 data_affid['Tags'] = data_affid['Tags'].apply(lambda x: str(x).replace('[^a-zA-Z-,]', ''))
-data_affid['Note'] = data_affid['Note'].apply(lambda x: str(x).lower())
+#data_affid['Note'] = data_affid['Note'].apply(lambda x: str(x).lower())
 
 nrp = ['NRP']
 data_affid['NRP'] = 'no'
@@ -103,11 +137,11 @@ data_affid['LastState'] = np.where(
 data_affid = data_affid[['line','Semaine', 'Date', 'Jour','Heure', 'direction',
                          'LastState', 'ScenarioName', 'StartTime','HangupTime', 'time (TZ offset incl.)', 
                          'TotalDuration', 'InCallDuration', 'FromNumber',
-                         'ToNumber', 'UserName', 'Note', 'Tags']]
+                         'ToNumber', 'UserName', 'Tags','IVR Branch']]
 
 
 today = date.today()
-week_prior =  today - timedelta(weeks=52)
+week_prior =  today - timedelta(weeks=204)
 data_affid = data_affid[data_affid['Date'] >= week_prior]
 data_affid = data_affid.sort_values(by='Semaine', ascending=True)
 
@@ -138,121 +172,110 @@ agents_armatis = ['Melinda Marmin',
                   'Emilie GEST', 
                   'Morgane Vandenbussche']
 
+agents_all = [ 'Melinda Marmin',
+                  'Sandrine Sauvage', 
+                  'Emilie GEST', 
+                  'Morgane Vandenbussche',
+                  'Olivier Sainte-Rose', 
+                  'Mourad HUMBLOT', 
+                  'Pierre GOUPILLON', 
+                  'Archimede KESSI', 
+                  'Frederic SAUVAN', 
+                  'Christophe Brichet']
+
 
 line_support = 'technique'
 line_armatis = 'armatistechnique'
+line_tous = 'tous'
 
-def def_df_support (df_entrant, df_sortant, line, liste_agents) :
+def def_df_support(df_entrant, df_sortant, line, liste_agents):
 
     def clean_string(s):
         return ''.join(s.split()).lower()
 
     df_entrant['line'] = df_entrant['line'].apply(clean_string)
-    
-    df_entrant = df_entrant[(df_entrant['line'] == line)
-                          & (df_entrant['direction'] == 'inbound')]
-    
-    df_sortant = df_sortant[df_sortant['UserName'].isin(liste_agents)]
-    df_sortant = df_sortant[(df_sortant['direction'] == 'outbound')]
-    
-    
-    def number(row):
-        if row['FromNumber'] == (33187662300 or 33189730123 or 
-                                 33189730124 or 33189730125 or 33189730128 or 33189718190):
-            return row['ToNumber']
-        else:
-            return row['FromNumber']
-        
+
+    if line == "tous":
+        df_entrant = df_entrant[(df_entrant['line'].isin(['technique', 'armatistechnique'])) 
+                                & (df_entrant['direction'] == 'inbound')]
+    elif line in ['technique', 'armatistechnique']:
+        df_entrant = df_entrant[(df_entrant['line'] == line) & (df_entrant['direction'] == 'inbound')]
+
+    df_sortant = df_sortant[(df_sortant['UserName'].isin(liste_agents)) & (df_sortant['direction'] == 'outbound')]
+
     df_entrant['Number'] = df_entrant['FromNumber']
     df_sortant['Number'] = df_sortant['ToNumber']
-    
+
     df = pd.concat([df_entrant, df_sortant])
-    
-    #df['Number'] = df.apply(number, axis=1)
+
     df = df.loc[~df["Jour"].isin(["Saturday", "Sunday"])]
-    df = df.loc[~df["UserName"].isin(["Vincent Gourvat", 
-                                      "Thierry CAROFF", 
-                                      'Armatis Agent 1',])]
-    
-    for x in liste_agents:
-        df[x] = df["UserName"].map({x:1,"NaN":0}) 
-    
-    if liste_agents == agents_support : 
-        for x in frederic:
-            df[x] = df["UserName"].map({x:0,"NaN":0})
-    
-    df_effectif = pd.DataFrame()
-    
-    if liste_agents == agents_support:
-        liste_agents.append('Frederic SAUVAN')
-        for x in liste_agents:
-            current_support_effectif = df.groupby('Date').agg({x:'mean'})
-            df_effectif = pd.concat([current_support_effectif, df_effectif])
-            df_effectif = df_effectif.groupby('Date').mean().sort_values(['Date'])
-            df_effectif.fillna(0, inplace=True)
-    
-        df_effectif = df_effectif.reset_index()
-    
-    if liste_agents == agents_armatis:
-        for x in liste_agents:
-            current_support_effectif = df.groupby('Date').agg({x:'mean'})
-            df_effectif = pd.concat([current_support_effectif, df_effectif])
-            df_effectif = df_effectif.groupby('Date').mean().sort_values(['Date'])
-            df_effectif.fillna(0, inplace=True)
-    
-        df_effectif = df_effectif.reset_index()
-    
-    if liste_agents == agents_support : 
-        df_effectif['Effectif'] = (df_effectif['Archimede KESSI']
-                                    + df_effectif['Olivier Sainte-Rose']
-                                    + df_effectif['Mourad HUMBLOT']
-                                    + df_effectif['Pierre GOUPILLON'] 
-                                    + df_effectif['Frederic SAUVAN'])
-        df_effectif = df_effectif[['Date', 'Effectif']]
-        
-    if liste_agents == agents_armatis : 
-        df_effectif['Effectif'] = (df_effectif['Melinda Marmin']
-                                    + df_effectif['Sandrine Sauvage']
-                                    + df_effectif['Emilie GEST']
-                                    + df_effectif['Morgane Vandenbussche'])
-    
-        df_effectif = df_effectif[['Date', 'Effectif']]
-    
-    df = pd.merge(df, df_effectif, how = "left")
+    df = df.loc[~df["UserName"].isin(["Vincent Gourvat", "Thierry CAROFF", 'Armatis Agent 1'])]
+
     df['Count'] = 1
-    df['Entrant_connect'] = df.apply(lambda x : 1 if x['LastState'] == 'yes' 
-                                     and x['direction'] == 'inbound' else 0, axis=1)
-    df['Entrant'] = df.apply(lambda x : 1 if x['direction'] == 'inbound' else 0, axis=1)
-    df['Sortant_connect'] = df.apply(lambda x : 1 if x['direction'] == 'outbound' and x['InCallDuration'] > 60 else 0, axis=1)
-    df['Taux_de_service'] = (df['Entrant_connect'] 
-                                    / df['Entrant'])
+    df['Entrant_connect'] = df.apply(lambda x: 1 if x['LastState'] == 'yes' and x['direction'] == 'inbound' else 0, axis=1)
+    df['Entrant'] = df.apply(lambda x: 1 if x['direction'] == 'inbound' else 0, axis=1)
+    df['Sortant_connect'] = df.apply(lambda x: 1 if x['direction'] == 'outbound' and x['InCallDuration'] > 60 else 0, axis=1)
+    df['Taux_de_service'] = df['Entrant_connect'] / df['Entrant']
     
     df["Mois"] = df['StartTime'].dt.strftime("%Y-%m")
 
-    def afd_ste(row):
-        if 'STE' in row['Tags']:
-            return 'STE'
-        else:
-            return 'AFD'
-
-    df["Logiciel"] = df.apply(afd_ste, axis=1)
+    # Ajouter la logique de filtrage des agents ayant pris au moins 2 appels
+    df_grouped = df.groupby(['Date', 'UserName']).size().reset_index(name='TotalAppels')
     
+    # Marquer les agents ayant pris au moins 2 appels
+    df_grouped['Actif'] = df_grouped['TotalAppels'].apply(lambda x: 1 if x >= 2 else 0)
+
+    # Calculer l'effectif moyen par jour
+    df_effectif = df_grouped.groupby('Date')['Actif'].sum().reset_index()
+    df_effectif.rename(columns={'Actif': 'Effectif'}, inplace=True)
+
+    # Fusionner l'effectif avec le DataFrame principal
+    df = pd.merge(df, df_effectif, on='Date', how='left')
+
+    # Fonction de conversion de tags IVR
+
+    def get_ivr_or_tags_transformed(row):
+        """
+        Retourne la valeur de 'IVR Branch' si elle est renseignée,
+        sinon 'Stellair' si 'line' est égale à 'armatistechnique',
+        sinon transforme les 3 premiers caractères de 'Tags' :
+        - 'STE' -> 'Stellair'
+        - 'AFD' -> 'Affid'
+
+        Args:
+            row (pd.Series): Une ligne du DataFrame.
+
+        Returns:
+            str: La valeur de 'IVR Branch', 'Stellair', ou la transformation de 'Tags'.
+        """
+        if pd.notna(row['IVR Branch']) and row['IVR Branch'].strip():
+            return row['IVR Branch']
+        elif row['line'] == 'armatistechnique':
+            return 'Stellair'
+        else:
+            tags_prefix = row['Tags'][:3].upper() if pd.notna(row['Tags']) else ''
+            if tags_prefix == 'STE':
+                return 'Stellair'
+            elif tags_prefix == 'AFD':
+                return 'Affid'
+            else:
+                return 'Inconnu'  # Retourne 'Inconnu' si aucun préfixe ne correspond
+
+    # Exemple d'utilisation sur un DataFrame
+    df['Logiciel'] = df.apply(get_ivr_or_tags_transformed, axis=1)
+
+
+    #df["Logiciel"] = df.apply(afd_ste, axis=1)
+
     return df
+
+
+    
+
 
 df_support = def_df_support(data_affid, data_affid, line_support, agents_support)
 
 #df_support.to_excel('Data_process_prod.xlsx')
-
-def donnees_hubspot (): 
-
-    df_nb_tickets_ssia = pd.DataFrame({
-        'mois': ['juin', 'juillet', 'aout'],
-        'ticket': [176, 180, 155]
-    })
-    
-    return df
-
-
 
 def charge_agents (agent) : 
     df_charge_agent = df_support[(df_support['UserName'] == agent )]
@@ -272,6 +295,7 @@ df_charge_mourad = charge_agents('Mourad HUMBLOT')
 df_charge_archimede = charge_agents('Archimede KESSI')
 df_charge_frederic = charge_agents('Frederic SAUVAN')
 df_charge_frederic = charge_agents('Christophe BRICHET')
+
 
 
     
