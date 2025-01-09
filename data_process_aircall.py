@@ -138,7 +138,7 @@ data_affid = data_affid[['line','Semaine', 'Date', 'Jour','Heure', 'direction',
 
 
 today = date.today()
-week_prior =  today - timedelta(weeks=204)
+week_prior =  today - timedelta(weeks=52)
 data_affid = data_affid[data_affid['Date'] >= week_prior]
 data_affid = data_affid.sort_values(by='Semaine', ascending=True)
 
