@@ -10,8 +10,8 @@ from datetime import date, timedelta, datetime, time
 import plotly.express as px
 
 # Définir les chemins
-path_source_affid_hubspot_ticket = 'data/Affid/Hubspot/ticket'
-path_source_affid_hubspot_agent = 'data/Affid/Hubspot/agent'
+path_source_affid_hubspot_ticket = 'data/Affid/hubspot/ticket'
+path_source_affid_hubspot_agent = 'data/Affid/hubspot/agent'
 
 # Chargement des fichiers tickets
 files_hubspot_ticket = [file for file in os.listdir(path_source_affid_hubspot_ticket) if not file.startswith('.')]
