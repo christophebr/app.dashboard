@@ -64,7 +64,8 @@ if authentification_status :
 
     PAGES = {
     "Support": "support",
-    "Agents": "agents"
+    "Agents": "agents",
+    "Tickets": "tickets"
     }
 
     if __name__ == "__main__": 
@@ -81,103 +82,100 @@ if authentification_status :
             from support import metrics_support
             from support import tickets_support , convert_to_sixtieth
             from Data_support import graph_activite , graph_taux_jour , graph_taux_heure, graph_tag
-            from Data_support import graph_charge_affid_stellair, calcul_taux_reponse2, calcul_productivite_appels
+            from Data_support import graph_charge_affid_stellair, calcul_taux_reponse, calcul_productivite_appels
             import plotly.graph_objects as go
             from data_process_aircall import def_df_support
-            from data_process_aircall import data_affid, line_support, agents_support, line_armatis, agents_armatis
+            from data_process_aircall import data_affid, line_support, agents_support, line_armatis, agents_armatis, line_tous, agents_all
+            from hubspot import df_affid_hubspot_ticket
 
                 
 
             def support():
-                st.title(" :bar_chart: Dashboard support affid")
-                #st.write("Contenu de la page Autre Page")
+                st.title("📊 Dashboard Support")
 
                 # Sélection du dataframe
                 dataframe_option = st.sidebar.selectbox(
                     "Choisir le dataframe",
-                    ["df_support", "df_support_armatis"]
+                    ["support_suresnes", "support_armatis", "support_stellair", "support_affid"]
                 )
 
-                if dataframe_option == "df_support":
-                    df_support = def_df_support(data_affid, data_affid, line_support, agents_support)
-                    df2 = def_df_support(data_affid, data_affid, line_support, agents_support)
-                else:
-                    df_support = def_df_support(data_affid, data_affid, line_armatis, agents_armatis)
-                    df2_armatis = def_df_support(data_affid, data_affid, line_armatis, agents_armatis)
+                df_stellair = def_df_support(data_affid, data_affid, line_tous, agents_all)
+                df_stellair = df_stellair[(df_stellair['line'] == 'armatistechnique') 
+                                          | (df_stellair['IVR Branch'] == 'Stellair')]
+
+                df_affid = def_df_support(data_affid, data_affid, line_tous, agents_support)
+                df_affid = df_affid[df_affid['IVR Branch'] == 'Affid']
 
 
-                #df_support = read_df_aircall()
-                #df_support = def_df_support(data_affid, data_affid, line_support, agents_support)
-                #df2 = def_df_support(data_affid, data_affid, line_support, agents_support)
+                # Association des dataframes aux paramètres correspondants
+                dataframe_config = {
+                    "support_suresnes": {
+                        "df": def_df_support(data_affid, data_affid, line_support, agents_support),
+                        "agents": agents_support
+                    },
+                    "support_armatis": {
+                        "df": def_df_support(data_affid, data_affid, line_armatis, agents_armatis),
+                        "agents": agents_armatis
+                    },
+                    "support_stellair": {
+                        "df": df_stellair,
+                        "agents": agents_all
+                    },
+                    "support_affid": {
+                        "df": df_affid,
+                        "agents": agents_support
+                    }
+                }
 
-                #df_support_armatis = def_df_support(data_affid, data_affid, line_armatis, agents_armatis)
-                #df2_armatis = def_df_support(data_affid, data_affid, line_armatis, agents_armatis)
-                #df2 = read_df_aircall()
+                # Chargement du dataframe sélectionné
+                df_support = dataframe_config[dataframe_option]["df"]
+                agents = dataframe_config[dataframe_option]["agents"]
 
-                #df_tickets = read_df_jira_support()
-                #df3 = read_df_jira_support()
+                # Filtrage des données en fonction des dates sélectionnées
+                start_date, end_date = parameters_support()
+                df_support_filtered, _ = df_selection_support(df_support, start_date, end_date)
 
+                # Calcul des métriques
+                taux_reponse, mean_difference, df_taux_reponse = calcul_taux_reponse(df_support_filtered)
+                [Taux_de_service, tendance_taux, Entrant, tendance_entrant, Numero_unique, tendance_unique, 
+                temps_moy_appel, tendance_appel, Nombre_appel_jour_agent] = metrics_support(df_support_filtered, df_support)
 
-                defaut_val = 'All'
+                fig_tags_cat_afd, temps_moy_appel_afd = graph_tag('AFD', df_support_filtered)
+                fig_tags_cat_ste, temps_moy_appel_ste = graph_tag('STE', df_support_filtered)
 
-                start_date, end_date  = parameters_support()
-                df_support, df2 = df_selection_support(df_support,start_date, end_date)
-                fig_charge_affid_stellair_pour , fig_charge_affid_stellair_nb = graph_charge_affid_stellair(df_support)
-                
-                taux_reponse, mean_difference, df_taux_reponse =  calcul_taux_reponse2(df_support)
-
-                [Taux_de_service , tendance_taux, Entrant, tendance_entrant, Numero_unique, 
-                tendance_unique, temps_moy_appel, tendance_appel, Nombre_appel_jour_agent] = metrics_support(df_support, df2)
-
-                fig_tags_cat_afd, temps_moy_appel_afd = graph_tag('AFD', df_support)
-                fig_tags_cat_ste, temps_moy_appel_ste = graph_tag('STE', df_support)
-
-                # Créer un DataFrame initial
-                nb_tickets_mois_ssia = {'mois': ['juin', 'juillet', 'aout'], 'ticket': [176, 180, 155], 'année': [2023, 2023, 2023]}
-                nb_tickets_mois_ssia = pd.DataFrame(nb_tickets_mois_ssia)
-                #df_grouped_ticket = tickets_support(df_tickets, option_pipeline, defaut_val)
-
-                col1, col2, col3= st.columns(3)
+                # Affichage des métriques principales
+                col1, col2, col3 = st.columns(3)
                 col1.metric("Taux de service en %", Taux_de_service)
-                col2.metric("Appels entrant / Jour",Entrant)
-                col3.metric("Numéros unique entrant / Jour", Numero_unique)
-                col_1, col_2, col_3 = st.columns(3)
-                #col_1.metric("Temps Moy / Appel", round((temps_moy_appel / 60),2), tendance_appel)
-                col_1.metric("Temps Moy / Appel", convert_to_sixtieth(temps_moy_appel))
-                col_2.metric("Nombre appels jour / agent", Nombre_appel_jour_agent)
-                col_3.metric('Taux clients répondus en %', round(taux_reponse * 100)) 
+                col2.metric("Appels entrant / Jour", Entrant)
+                col3.metric("Numéros uniques / Jour", Numero_unique)
 
                 col4, col5, col6 = st.columns(3)
-                col4.metric('Temps moyen avant rappel en min', round(mean_difference)) 
+                col4.metric("Temps Moy / Appel", convert_to_sixtieth(temps_moy_appel), tendance_appel)
+                col5.metric("Nombre d'appels / Agent / Jour", Nombre_appel_jour_agent)
+                col6.metric("Taux de réponse (%)", round(taux_reponse * 100))
 
-                st.plotly_chart(graph_activite(df_support), use_container_width=True)
-                #st.plotly_chart(tickets_support(df_tickets), use_container_width=True)
+                # Affichage des graphiques d'activité
+                st.plotly_chart(graph_activite(df_support_filtered), use_container_width=True)
 
-
+                # Affichage des graphiques de taux
                 col_graph1, col_graph2 = st.columns(2)
-                col_graph1.plotly_chart(graph_taux_jour(df_support), use_container_width=True)
-                col_graph2.plotly_chart(graph_taux_heure(df_support), use_container_width=True)
+                col_graph1.plotly_chart(graph_taux_jour(df_support_filtered), use_container_width=True)
+                col_graph2.plotly_chart(graph_taux_heure(df_support_filtered), use_container_width=True)
 
-                if dataframe_option == "df_support":
-                    col_graph11, col_graph22 = st.columns(2)
-                    col_graph11.plotly_chart(fig_charge_affid_stellair_pour, use_container_width=True)
-                    col_graph22.plotly_chart(fig_charge_affid_stellair_nb, use_container_width=True)
-                else: 
-                    col_graph11, col_graph22 = st.columns(2)
+                # Graphiques spécifiques au dataframe
+                if dataframe_option == "support_suresnes":
+                    fig_charge_affid_stellair_pour, fig_charge_affid_stellair_nb = graph_charge_affid_stellair(df_support_filtered)
+                    col_graph3, col_graph4 = st.columns(2)
+                    col_graph3.plotly_chart(fig_charge_affid_stellair_pour, use_container_width=True)
+                    col_graph4.plotly_chart(fig_charge_affid_stellair_nb, use_container_width=True)
 
-            
-                #col_stat_afd, col_stat_ste= st.columns(2)
-                #col_stat_afd.metric("Temps Moy / Appel - NXT", temps_moy_appel_afd)
-                #col_stat_ste.metric("Temps Moy / Appel - STE", temps_moy_appel_ste)
-
-                col_cat_afd, col_cat_ste= st.columns(2)
-                col_cat_afd.plotly_chart(fig_tags_cat_afd, use_container_width=True)
-                col_cat_ste.plotly_chart(fig_tags_cat_ste, use_container_width=True)
-
-
-
+                # Graphiques des catégories AFD et STE
+                #col_cat_afd, col_cat_ste = st.columns(2)
+                #col_cat_afd.plotly_chart(fig_tags_cat_afd, use_container_width=True)
+                #col_cat_ste.plotly_chart(fig_tags_cat_ste, use_container_width=True)
 
             support()
+
 
         elif selection_page == "Agents":
             from support import read_df_aircall
@@ -188,151 +186,126 @@ if authentification_status :
             from Data_support import charge_agents
             from Data_support import graph_charge_agent, charge_entrant_sortant
             from data_process_aircall import def_df_support
-            from data_process_aircall import data_affid, line_support, agents_support, line_armatis, agents_armatis
+            from data_process_aircall import data_affid, line_support, agents_support, line_armatis, agents_armatis, line_tous, agents_all
             import pandas as pd
 
 
 
-            def agents (): 
+            def agents():
+                st.title(":bar_chart: Dashboard Support")
 
-                st.title(" :bar_chart: Dashboard support affid")
-                #st.write("Contenu de la page Autre Page")
-
-                                # Sélection du dataframe
+                # Sélection de la page
                 dataframe_option = st.sidebar.selectbox(
-                    "Choisir le dataframe",
-                    ["df_support", "df_support_armatis"]
+                    "Choisir la page",
+                    ["support_suresnes", "support_armatis", "support_stellair", "support_affid"],
+                    index=0
                 )
 
-                if dataframe_option == "df_support":
-                    df_support = def_df_support(data_affid, data_affid, line_support, agents_support)
-                else:
-                    df_support = def_df_support(data_affid, data_affid, line_armatis, agents_armatis)
-
-                #df_support = read_df_aircall()
-                #df_support = def_df_support(data_affid, data_affid, line_support, agents_support)
-                start_date, end_date  = parameters_support()
-
-                #df_support, df2, df_tickets, df3 = df_selection_support(df_support,df2, df_tickets, df3,values)
-                df_support, df2 = df_selection_support(df_support,start_date, end_date)
-                #df2, df_tickets, df3
-
-
-                if dataframe_option == "df_support":
-
+                # Définir la liste d'agents en fonction de la page sélectionnée
+                if dataframe_option == "support_suresnes":
+                    liste_agents = ['Pierre GOUPILLON', 'Mourad HUMBLOT', 'Olivier Sainte-Rose', 'Frederic SAUVAN', 'Archimede KESSI', 'Christophe BRICHET']
+                elif dataframe_option == "support_armatis":
+                    liste_agents = ['Emilie GEST', 'Sandrine Sauvage', 'Morgane Vandenbussche', 'Melinda Marmin']
+                elif dataframe_option == "support_stellair":
+                    liste_agents = ['Emilie GEST', 'Sandrine Sauvage', 'Morgane Vandenbussche', 'Melinda Marmin',
+                                    'Pierre GOUPILLON', 'Mourad HUMBLOT', 'Olivier Sainte-Rose', 'Frederic SAUVAN', 'Archimede KESSI']
+                elif dataframe_option == "support_affid":
                     liste_agents = ['Pierre GOUPILLON', 'Mourad HUMBLOT', 'Olivier Sainte-Rose', 'Frederic SAUVAN', 'Archimede KESSI']
 
-                    df_charge_pierre = charge_agents('Pierre GOUPILLON', df_support)
-                    df_charge_olivier = charge_agents('Olivier Sainte-Rose', df_support)
-                    df_charge_mourad = charge_agents('Mourad HUMBLOT', df_support)
-                    df_charge_archimede = charge_agents('Archimede KESSI', df_support)
-                    df_charge_frederic = charge_agents('Frederic SAUVAN', df_support)
+                # Charger le dataframe avec les bons agents
+                df_support = def_df_support(data_affid, data_affid, line_tous, liste_agents)
+                start_date, end_date = parameters_support()
+                df_support, df2 = df_selection_support(df_support, start_date, end_date)
+
+                # Calculer la charge des agents
+                liste_data = [charge_agents(agent, df_support) for agent in liste_agents]
+                df_charge = reduce(lambda left, right: pd.merge(left, right, on=['Date'], how='outer'), liste_data).reset_index()
+                df_charge = df_charge.sort_values(['Date'], ascending=True)
+
+                df_charge_effectif = df_support.groupby(['Date']).agg({'Effectif': 'mean'}).reset_index()
+                df_charge = pd.merge(df_charge, df_charge_effectif, on='Date', how="left")
+                
+            
+                com_jour_mourad, temps_moy_com_mourad, nb_appels_jour_mourad = calcul_productivite_appels(df_support, "Mourad HUMBLOT")
+                com_jour_olivier, temps_moy_com_olivier, nb_appels_jour_olivier = calcul_productivite_appels(df_support, "Olivier Sainte-Rose")
+                com_jour_archimede, temps_moy_com_archimede, nb_appels_jour_archimede = calcul_productivite_appels(df_support, "Archimede KESSI")
+
+                nb_appels_jour_moyen = (nb_appels_jour_mourad + nb_appels_jour_olivier + nb_appels_jour_archimede) / 3
+                nb_appels_jour_objectif = 30
+                
+                #nb_appels_jour_entrants = df_support[(df_support['direction'] == 'inbound') & (df_support['UserName'] == agent)]['Entrant_connect'].sum()
+                #nb_appels_jour_sortants = df_support[(df_support['direction'] == 'outbound') & (df_support['UserName'] == agent)]['Sortant_connect'].sum()
 
 
-                    liste_data = [df_charge_pierre, df_charge_olivier, df_charge_mourad, 
-                                df_charge_archimede, df_charge_frederic]
-                    df_charge = reduce(lambda  left,right: pd.merge(left,right,on=['Date'],how='outer'),liste_data).reset_index()
-                    df_charge = df_charge.sort_values(['Date'], ascending=True)
+                # Afficher les métriques et graphiques pour chaque agent
+                for agent in liste_agents:
+                    com_jour, temps_moy_com, nb_appels_jour= calcul_productivite_appels(df_support, agent)
+                    nb_appels_jour_entrants = df_support[
+                        (df_support['direction'] == 'inbound') & (df_support['UserName'] == agent) & (df_support['LastState'] == 'yes')
+                         ].groupby('Date').agg({'Date':'count'}).mean().values[0]
+                    nb_appels_jour_sortants = df_support[
+                        (df_support['direction'] == 'outbound') & (df_support['UserName'] == agent)& (df_support['LastState'] == 'yes')
+                         ].groupby('Date').agg({'Date':'count'}).mean().values[0]
+                    ratio_entrants = nb_appels_jour_entrants / (nb_appels_jour_entrants +  nb_appels_jour_sortants)
+                    ratio_sortants = nb_appels_jour_sortants / (nb_appels_jour_entrants +  nb_appels_jour_sortants)
 
-                    df_charge_effectif = df_support.groupby(['Date']).agg({'Effectif':'mean'}).reset_index()
-                    df_charge = pd.merge(df_charge, df_charge_effectif, left_on='Date', right_on='Date', how = "left",)
+                    if nb_appels_jour_moyen < nb_appels_jour_objectif:
+                        nb_appels_diff = (nb_appels_jour_moyen - nb_appels_jour) / nb_appels_jour_moyen
+                        if nb_appels_jour < nb_appels_jour_objectif:
+                            nb_appels_diff = (nb_appels_jour - nb_appels_jour_objectif)
+                        else:
+                            nb_appels_diff = (nb_appels_jour - nb_appels_jour_objectif)
 
-                    com_jour_mourad, temps_moy_com_mourad, nb_appels_jour_mourad = calcul_productivite_appels(df_support, 'Mourad HUMBLOT')
-                    com_jour_olivier, temps_moy_com_olivier, nb_appels_jour_olivier = calcul_productivite_appels(df_support, 'Olivier Sainte-Rose')
-                    com_jour_pierre, temps_moy_com_pierre, nb_appels_jour_pierre = calcul_productivite_appels(df_support, 'Pierre GOUPILLON')
-                    com_jour_archimede, temps_moy_com_archimede, nb_appels_jour_archimede = calcul_productivite_appels(df_support, 'Archimede KESSI')
+                    #nb_appels_diff = (nb_appels_jour - nb_appels_jour_moyen) / nb_appels_jour_moyen
+                    col1, col2, col3, col4 = st.columns(4) 
+                    col1.metric(f'{agent} - Com Moy / Jour', com_jour)
+                    col2.metric(f'{agent} - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com))
+                    col3.metric(f'{agent} - Nb Appels / Jour', round(nb_appels_jour, 2))
 
-                    colm1, colm2, colm3= st.columns(3)
-                    colm1.metric('Mourad - Com Moy / Jour', com_jour_mourad)
-                    colm2.metric('Mourad - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_mourad))
-                    colm3.metric('Mourad - Nb Appels / Jour', round(nb_appels_jour_mourad, 2))
+                    col4.metric(
+                        f"{agent} - Répartition Entrants / Sortants",
+                        f"{int(ratio_entrants * 100)}% / {int(ratio_sortants * 100)}%"
+                    )
+                    st.plotly_chart(charge_entrant_sortant(df_support, agent), use_container_width=True)
+                
+               # for agent in liste_agents:
+               #     st.plotly_chart(charge_entrant_sortant(df_support, agent), use_container_width=True)
 
-                    colo1, colo2, colo3= st.columns(3)
-                    colo1.metric('Olivier - Com Moy / Jour', com_jour_olivier)
-                    colo2.metric('Olivier - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_olivier))
-                    colo3.metric('Olivier - Nb Appels / Jour', round(nb_appels_jour_olivier, 2))
+                # Afficher le graphique global de la charge des agents
+                st.plotly_chart(graph_charge_agent(df_charge, liste_agents), use_container_width=True)
 
-                    colp1, colp2, colp3= st.columns(3)
-                    colp1.metric('Pierre - Com Moy / Jour', com_jour_pierre)
-                    colp2.metric('Pierre - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_pierre))
-                    colp3.metric('Pierre - Nb Appels / Jour', round(nb_appels_jour_pierre, 2))
-
-                    cola1, cola2, cola3= st.columns(3)
-                    cola1.metric('Archimède - Com Moy / Jour', com_jour_archimede)
-                    cola2.metric('Archimède - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_archimede))
-                    cola3.metric('Archimède - Nb Appels / Jour', round(nb_appels_jour_archimede, 2))
-
-                    st.plotly_chart(graph_charge_agent(df_charge, liste_agents), use_container_width=True)
-
-
-
-                    colm1, colm2= st.columns(2)
-                    colm1.plotly_chart(charge_entrant_sortant (df_support, 'Mourad HUMBLOT'), use_container_width=True)
-                    colm2.plotly_chart(charge_entrant_sortant (df_support, 'Archimede KESSI'), use_container_width=True)
-
-                    coln1, coln2= st.columns(2)
-                    coln1.plotly_chart(charge_entrant_sortant (df_support, 'Olivier Sainte-Rose'), use_container_width=True)
-                    coln2.plotly_chart(charge_entrant_sortant (df_support, 'Pierre GOUPILLON'), use_container_width=True)
-
-                    coln1.plotly_chart(charge_entrant_sortant (df_support, 'Christophe Brichet'), use_container_width=True)
-
-                else : 
-
-                    liste_agents = ['Emilie GEST', 'Sandrine Sauvage', 'Morgane Vandenbussche', 'Melinda Marmin']
-
-                    df_charge_emilie = charge_agents('Emilie GEST', df_support)
-                    df_charge_sandrine = charge_agents('Sandrine Sauvage', df_support)
-                    df_charge_morgane = charge_agents('Morgane Vandenbussche', df_support)
-                    df_charge_melinda = charge_agents('Melinda Marmin', df_support)
-
-
-                    liste_data = [df_charge_emilie, df_charge_sandrine, df_charge_morgane, 
-                                df_charge_melinda]
-                    df_charge = reduce(lambda  left,right: pd.merge(left,right,on=['Date'],how='outer'),liste_data).reset_index()
-                    df_charge = df_charge.sort_values(['Date'], ascending=True)
-
-                    df_charge_effectif = df_support.groupby(['Date']).agg({'Effectif':'mean'}).reset_index()
-                    df_charge = pd.merge(df_charge, df_charge_effectif, left_on='Date', right_on='Date', how = "left",)
-
-                    com_jour_emilie, temps_moy_com_emilie, nb_appels_jour_emilie = calcul_productivite_appels(df_support, 'Emilie GEST')
-                    com_jour_sandrine, temps_moy_com_sandrine, nb_appels_jour_sandrine = calcul_productivite_appels(df_support, 'Sandrine Sauvage')
-                    com_jour_morgane, temps_moy_com_morgane, nb_appels_jour_morgane = calcul_productivite_appels(df_support, 'Morgane Vandenbussche')
-                    com_jour_melinda, temps_moy_com_melinda, nb_appels_jour_melinda = calcul_productivite_appels(df_support, 'Melinda Marmin')
-
-                    colm1, colm2, colm3= st.columns(3)
-                    colm1.metric('Emilie - Com Moy / Jour', com_jour_emilie)
-                    colm2.metric('Emilie - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_emilie))
-                    colm3.metric('Emilie - Nb Appels / Jour', round(nb_appels_jour_emilie, 2))
-
-                    coln1, coln2, coln3= st.columns(3)
-                    colm1.metric('Sandrine - Com Moy / Jour', com_jour_sandrine)
-                    colm2.metric('Sandrine - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_sandrine))
-                    colm3.metric('Sandrine - Nb Appels / Jour', round(nb_appels_jour_sandrine, 2))
-
-                    colo1, colo2, colo3= st.columns(3)
-                    colm1.metric('Morgane - Com Moy / Jour', com_jour_morgane)
-                    colm2.metric('Morgane - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_morgane))
-                    colm3.metric('Morgane - Nb Appels / Jour', round(nb_appels_jour_morgane, 2))
-
-                    colp1, colp2, colp3= st.columns(3)
-                    colm1.metric('Melinda - Com Moy / Jour', com_jour_melinda)
-                    colm2.metric('Melinda - Temps Moy / Appel', convert_to_sixtieth(temps_moy_com_melinda))
-                    colm3.metric('Melinda - Nb Appels / Jour', round(nb_appels_jour_melinda, 2))
-
-                    st.plotly_chart(graph_charge_agent(df_charge, liste_agents), use_container_width=True)
-
-                    colq1, colq2= st.columns(2)
-                    colq1.plotly_chart(charge_entrant_sortant (df_support, 'Emilie GEST'), use_container_width=True)
-                    colq2.plotly_chart(charge_entrant_sortant (df_support, 'Sandrine Sauvage'), use_container_width=True)
-
-                    colr1, colr2= st.columns(2)
-                    colr1.plotly_chart(charge_entrant_sortant (df_support, 'Morgane Vandenbussche'), use_container_width=True)
-                    colr2.plotly_chart(charge_entrant_sortant (df_support, 'Melinda Marmin'), use_container_width=True)
-
-
+            # Appeler la fonction agents()
             agents()
 
 
+        elif selection_page == "Tickets":
+                    from hubspot import df_affid_hubspot_ticket, data_affid_hubspot_agent
+                    from hubspot import activite_ticket_source_client, mails_envoyes_agent, sla_2h
+                    import pandas as pd
+
+                    #df_affid_hubspot_ticket = None  # Définir la variable avant la condition
+
+                    def tickets():
+                        st.title(":bar_chart: Dashboard Support")
+
+                        # Sélection de la page
+                        #dataframe_option = st.sidebar.selectbox(
+                        #    "Choisir la page",
+                        #    ["support_suresnes", "support_armatis", "support_stellair", "support_affid"],
+                        #    index=0
+                        #)
+
+                                        # Affichage des métriques principales
+                        col1, col2, col3 = st.columns(3)
+                        col1.metric("Taux de réponse <2h - SSIA", sla_2h(df_affid_hubspot_ticket, 'SSIA'))
+
+                        st.plotly_chart(activite_ticket_source_client(df_affid_hubspot_ticket ))
+                        
+                        st.plotly_chart(mails_envoyes_agent(data_affid_hubspot_agent))
+
+
+                    # Appeler la fonction agents()
+                    tickets()
         #selection_page = st.sidebar.selectbox("Choix de la page", list(PAGES.keys()), key="page_selection")
 
 
