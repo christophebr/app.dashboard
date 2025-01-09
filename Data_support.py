@@ -7,90 +7,123 @@ import pandas as pd
 import numpy as np
 
 
-def graph_activite (df_support) : 
-
+def graph_activite(df_support):
     from plotly.subplots import make_subplots
     import plotly.graph_objects as go
-    
-    data_graph1 = df_support[((df_support['direction'] == 'inbound'))]
-    
-    data_graph1 = data_graph1.groupby(['Semaine']).agg({'Entrant':'sum',
-                                                    'Entrant_connect':'sum',
-                                                    'Number':'nunique',
-                                                    'Effectif':'mean'}).rename(columns = {"Number":"Numero_unique",}).reset_index()
 
-    data_graph1 = data_graph1.groupby(['Semaine']).agg({'Entrant':'mean',
-                                                    'Entrant_connect':'mean',
-                                                    'Numero_unique':'mean',
-                                                    'Effectif':'mean'}).reset_index()
+    # Filtrage des données pour l'activité entrante
+    data_graph1 = df_support[df_support['direction'] == 'inbound']
 
-    #data_graph1['Semaine'] = pd.to_datetime(data_graph1['Semaine'] + '-1', format='%Y-%W-%w')
-    #data_graph1['Semaine'] = pd.to_datetime(data_graph1['Semaine'])
-    #data_graph1['Date'] = pd.to_datetime(data_graph1['Date'])
-
-    data_graph1['Taux_de_service_support'] = (data_graph1['Entrant_connect'] 
-                                            / data_graph1['Entrant'])
-
-    #data_graph1 = data_graph1.reset_index()
-
-    data_graph1['100%'] = 1
-
-    # Créer la figure avec plusieurs sous-graphiques
-    fig = make_subplots(rows=1, cols=1, specs=[[{"secondary_y": True}]] )
-
-    # Ajouter les barres pour Taux
-    fig.add_trace(go.Bar(x=data_graph1['Semaine'], y=data_graph1['Taux_de_service_support'], name='Taux', opacity=0.7), secondary_y=True,)
-
-    fig.update_traces(
-            text=data_graph1['Taux_de_service_support'], texttemplate='%{text:.0%}', 
-                    secondary_y=True,      
+    # Agrégation des données par semaine et date
+    data_graph2 = (
+        data_graph1.groupby(['Semaine'])
+        .agg(
+            Entrant=('Entrant', 'sum'),
+            Entrant_connect=('Entrant_connect', 'sum'),
+            Numero_unique=('Number', 'nunique'),
+            Effectif=('Effectif', 'mean')
         )
+        .reset_index()
+    )
 
-    # Ajouter les lignes empilées pour Numero_unique et Entrant
-    fig.add_trace(go.Scatter(x=data_graph1['Semaine'], y=data_graph1['Numero_unique'], name='Numero_unique', fill='tozeroy'), secondary_y=False,)
-    fig.add_trace(go.Scatter(x=data_graph1['Semaine'], y=data_graph1['Entrant'], name='Entrant', fill='tozeroy'), secondary_y=False,)
+    # Agrégation finale par semaine
+    data_graph3 = (
+        data_graph2.groupby('Semaine')[['Entrant', 'Entrant_connect', 'Numero_unique', 'Effectif']]
+        .mean()
+        .reset_index()
+    )
 
-    fig.update_yaxes(range = [0,1], secondary_y=True)
+    # Calcul du taux de service support
+    data_graph3['Taux_de_service_support'] = (
+        data_graph3['Entrant_connect'] / data_graph3['Entrant']
+    )
+
+    # Ajout d'une colonne 100%
+    data_graph3['100%'] = 1
+
+    # Création de la figure avec des sous-graphiques
+    fig = make_subplots(rows=1, cols=1, specs=[[{"secondary_y": True}]])
+
+    # Ajouter les barres pour le Taux de service support
+    fig.add_trace(
+        go.Bar(
+            x=data_graph3['Semaine'],
+            y=data_graph3['Taux_de_service_support'],
+            name='Taux',
+            opacity=0.7,
+            text=data_graph3['Taux_de_service_support'],
+            texttemplate='%{text:.0%}'
+        ),
+        secondary_y=True,
+    )
+
+    # Ajouter les lignes empilées pour Numero_unique, Entrant_connect et Entrant
+    fig.add_trace(
+        go.Scatter(
+            x=data_graph3['Semaine'],
+            y=data_graph3['Numero_unique'],
+            name='Numero_unique',
+            fill='tozeroy'
+        ),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=data_graph3['Semaine'],
+            y=data_graph3['Entrant_connect'],
+            name='Entrant_connect',
+            fill='tozeroy'
+        ),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=data_graph3['Semaine'],
+            y=data_graph3['Entrant'],
+            name='Entrant',
+            fill='tozeroy'
+        ),
+        secondary_y=False,
+    )
+
+    # Mise à jour des axes Y pour les pourcentages
+    fig.update_yaxes(range=[0, 1], secondary_y=True)
     fig.update_yaxes(tickformat=".0%", secondary_y=True)
 
-    # Ajouter des légendes et étiquettes
-    fig.update_layout(title='Graphique avec Taux en barres et Numero_unique/Entrant en aires empilées',
-                    template='plotly_dark',
-                    xaxis_title='Semaine',
-                    yaxis_title='Valeurs',
-                    )
-
-
+    # Configuration de la mise en page et des légendes
     fig.update_layout(
-            title_text="Activité & Taux de service - 20 semaines",
-            template='plotly_dark',
-            #height=400,
-            #width=1440,
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1
-            )
+        title='Graphique avec Taux en barres et Numero_unique/Entrant en aires empilées',
+        template='plotly_dark',
+        xaxis_title='Semaine',
+        yaxis_title='Valeurs',
+        title_text="Activité & Taux de service - 20 semaines",
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
         )
-    
-    return fig
+    )
 
+    return fig
 
 
 
 def graph_taux_jour (df_support): 
 
+    df_support  = df_support[df_support['direction'] == 'inbound']
 
     data_graph2 = df_support.groupby(['Semaine','Date', 'Jour']).agg({'Entrant':'sum',
                                                                 'Entrant_connect':'sum',
                                                                 'Number':'nunique',
                                                                 'Effectif':'mean'})
+    
     data_graph2 = data_graph2.groupby(['Semaine','Date', 'Jour']).agg({'Entrant':'mean',
                                                     'Entrant_connect':'mean',
                                                     'Number':'mean',
                                                     'Effectif':'mean'}).rename(columns = {"Number":"Numero_unique",})
+    
     data_graph2['Taux_de_service_support'] = (data_graph2['Entrant_connect'] 
                                             / data_graph2['Entrant'])
 
@@ -199,13 +232,14 @@ def graph_taux_heure (df_support):
 
 
 def graph_charge_affid_stellair(df_support):
-    df_support['Tags'] = df_support['Tags'].astype(str)
+    #df_support['Tags'] = df_support['Tags'].astype(str)
     semaines_uniques = df_support['Semaine'].unique()
     resultats = []
 
     for semaine in semaines_uniques: 
-        stellair = df_support[(df_support['Semaine'] == str(semaine)) & (~df_support["Tags"].str.contains('STE 1er Pas') & (df_support["Tags"].str.contains('STE')))]['Count'].sum()
-        affid = df_support[(df_support['Semaine'] == str(semaine)) & (df_support["Tags"].str.contains('AFD'))]['Count'].sum()
+        stellair = df_support[((df_support['Semaine'] == str(semaine)) 
+                              & (df_support["Logiciel"].str.contains('Stellair'))) ]['Count'].sum()
+        affid = df_support[(df_support['Semaine'] == str(semaine)) & (df_support["Logiciel"].str.contains('Affid'))]['Count'].sum()
         resultats.append({'Semaine': semaine, 'stellair': stellair, 'affid': affid})
 
     df_resultats = pd.DataFrame(resultats)
@@ -259,6 +293,7 @@ def graph_charge_affid_stellair(df_support):
 def calcul_taux_reponse (df_support): 
     df = df_support
 
+
     df['LastState'] = df['LastState'] == 'yes'
 
     entrants = df[df['direction'] == 'inbound']
@@ -304,9 +339,12 @@ def calcul_taux_reponse2(df):
     #week = today - timedelta(weeks=nb)
     
     # Filtrer les données pour les dernières 'nb' semaines
-    #df = df[df['Date'] >= week]
+    #df = df[df['Date'] >= week]x
 
     # Convertir la colonne 'LastState' en booléen (True si 'yes', sinon False)
+
+    df = df.loc[~df["Number"].isin(["anonymous"])]
+
     df['LastState'] = df['LastState'] == 'yes'
 
     # Séparer les appels entrants et sortants
@@ -368,10 +406,16 @@ def calcul_taux_reponse2(df):
     return taux_reponse, mean_difference, merged
 
 
-def calcul_productivite_appels(df_support, agent): 
+def calcul_productivite_appels(df_support, agent):
 
-    df_support = df_support[df_support[agent] == 1].groupby(['Date']).agg({'Number':'count', 
-                                                    'InCallDuration':'sum'})
+    df_support_all = df_support
+
+    df_grouped = df_support.groupby(['Date', 'UserName']).size().reset_index(name='TotalAppels')
+    df_grouped = df_grouped[df_grouped['UserName'] == agent].groupby(['Date']).agg({'TotalAppels':'mean'})
+
+    df_support = df_support[df_support['UserName'] == agent].groupby(['Date']).agg({'InCallDuration':'sum'})
+
+    df_support = pd.merge(df_support, df_grouped, on='Date', how='left')
     
     def convert_minutes_to_hhmmss(minutes):
         # Convertir les minutes en heures, minutes et secondes
@@ -385,9 +429,14 @@ def calcul_productivite_appels(df_support, agent):
     df_support['InCallDuration_format'] = pd.to_datetime(df_support['InCallDuration_format'])
 
     com_jour = df_support['InCallDuration_format'].mean()
-    com_jour = com_jour.strftime('%H:%M:%S')
-    temps_moy_com = (df_support['InCallDuration'] /  df_support['Number']).mean()
-    nb_appels_jour = df_support['Number'].mean()
+
+    if pd.notnull(com_jour):  # Vérifie si com_jour n'est pas NaT
+        com_jour = com_jour.strftime('%H:%M:%S')
+    else:
+        com_jour = None  # Ou une autre valeur par défaut, comme '' ou '00:00:00'
+
+    temps_moy_com = (df_support['InCallDuration'] /  df_support['TotalAppels']).mean()
+    nb_appels_jour = df_support['TotalAppels'].mean()
 
     #df_support['Productivite_appels'] = (df_support['Number'] / 420) * 60
 
@@ -462,12 +511,18 @@ def graph_charge_agent (df, liste_agents):
     return fig6
 
 
+
 def charge_entrant_sortant (df_support, agent): 
     df_support = df_support[(df_support['UserName'] == agent) & 
-           (df_support['LastState'] == 'yes')].groupby(['Semaine', 'direction']).agg({'line':'count'}).reset_index()
+           (df_support['LastState'] == 'yes')].groupby(['Semaine','line','direction']).agg({'Date':'count'}).reset_index()
     
+    df_support['Empilement'] = df_support.apply(
+    lambda row: f"inbound - {row['line']}" if row['direction'] == 'inbound' else row['direction'], axis=1
+    )
+    #df_support = df_support.sort_values(by='Semaine', ascending=False)
 
-    fig = px.histogram(df_support, x="Semaine", y='line', color="direction", 
+
+    fig = px.histogram(df_support, x="Semaine", y='Date', color="Empilement", 
                        title= agent)
     
     fig.update_layout(
@@ -477,6 +532,9 @@ def charge_entrant_sortant (df_support, agent):
     
 
     return fig
+
+
+
 
 
 def graph_tag(logiciel, df_support): 
