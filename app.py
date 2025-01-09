@@ -203,7 +203,7 @@ if authentification_status :
 
                 # Définir la liste d'agents en fonction de la page sélectionnée
                 if dataframe_option == "support_suresnes":
-                    liste_agents = ['Pierre GOUPILLON', 'Mourad HUMBLOT', 'Olivier Sainte-Rose', 'Frederic SAUVAN', 'Archimede KESSI', 'Christophe BRICHET']
+                    liste_agents = ['Pierre GOUPILLON', 'Mourad HUMBLOT', 'Olivier Sainte-Rose', 'Frederic SAUVAN', 'Archimede KESSI']
                 elif dataframe_option == "support_armatis":
                     liste_agents = ['Emilie GEST', 'Sandrine Sauvage', 'Morgane Vandenbussche', 'Melinda Marmin']
                 elif dataframe_option == "support_stellair":
