@@ -93,8 +93,11 @@ def df_selection_support(df_support, start_date, end_date):
 #    return df_support, df2
 
 def convert_to_sixtieth(seconds):
-    minutes, seconds = divmod(seconds, 60)  # Convertir en heures
+    if pd.isnull(seconds):  # Vérifie si seconds est NaN
+        return "Invalid"  # Retourne une valeur par défaut ou un message d'erreur
+    minutes, seconds = divmod(int(seconds), 60)  # Convertir en heures
     return f"{int(minutes)}m{int(seconds):02d}s"
+
 
 
 
