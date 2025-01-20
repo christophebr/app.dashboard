@@ -520,12 +520,14 @@ def charge_entrant_sortant (df_support, agent):
     lambda row: f"inbound - {row['line']}" if row['direction'] == 'inbound' else row['direction'], axis=1
     )
     #df_support = df_support.sort_values(by='Semaine', ascending=False)
-
+    ordre_semaines = sorted(df_support['Semaine'].unique(), key=lambda x: (int(x[1:5]), int(x[6:])))
+    df_support['Semaine'] = pd.Categorical(df_support['Semaine'], categories=ordre_semaines, ordered=True)
 
     fig = px.histogram(df_support, x="Semaine", y='Date', color="Empilement", 
                        title= agent)
     
     fig.update_layout(
+         xaxis=dict(categoryorder="array", categoryarray=ordre_semaines),
          yaxis_title="Appels",
          yaxis=dict(range=[0, 200])  # Ajuste la plage de l'axe y entre 0 et 100
         )
